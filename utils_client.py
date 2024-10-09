@@ -188,7 +188,7 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
             lista_servers = grafo[trecho[0]][trecho[1]]['servidores']
 
             # Verifica se trecho em questão do caminho encontrado não foi retornado por nenhum servidor
-            if len(lista_servers) == 0:
+            if not lista_servers:
                 caminho_valido = False
                 break
             
@@ -214,9 +214,14 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
             # Organiza os caminhos em fila de prioridade (menor ao maior) a depender do valor
             heapq.heappush(caminhos_valor, (valor_caminho, dist_caminho, servidores, path))
 
-    caminhos_ordenados_distancia = [heapq.heappop(caminhos_distancia) for _ in range(min(len(caminhos_distancia), 3))]
+    #caminhos_ordenados_distancia = [heapq.heappop(caminhos_distancia) for _ in range(min(len(caminhos_distancia), 3))]
 
-    caminhos_ordenados_valor = [heapq.heappop(caminhos_valor) for _ in range(min(len(caminhos_valor), 3))]
+    #caminhos_ordenados_valor = [heapq.heappop(caminhos_valor) for _ in range(min(len(caminhos_valor), 3))]
+
+    # Obtém os 3 melhores caminhos (se existirem)
+    caminhos_ordenados_distancia = heapq.nsmallest(3, caminhos_distancia)
+    
+    caminhos_ordenados_valor = heapq.nsmallest(3, caminhos_valor)
     
     return caminhos_ordenados_distancia, caminhos_ordenados_valor
 

@@ -190,11 +190,8 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
 
     # Se houver pelo menos um caminho válido, extrai os caminhos e insere "A" no início. Não precisa mais da distância
     if caminhos:
-        # o [1] informa que apenas item[1] da heap (caminhos) deve ser guardado
-        caminhos_ordenados = [heapq.heappop(caminhos)[1] for _ in range(min(len(caminhos), 5))]
-
-        # Esse "A" vai indicar que esses caminhos são do servidor A
-        caminhos_ordenados.insert(0, "A")
+        caminhos_ordenados = ["A"]  # Esse "A" vai indicar que os caminhos são do servidor A
+        caminhos_ordenados.extend([heapq.heappop(caminhos)[1] for _ in range(min(len(caminhos), 5))])
     
     # Caso não haja caminhos válidos, retorna uma lista vazia
     else:
@@ -225,24 +222,18 @@ def verifica_compras_cpf(cpf):
 
 # Função para verificar se os trechos escolhidos pelo cliente ainda estão disponível (compara com o arquivo atual)
 # Parâmetros ->     G: grafo dos trechos atualizado do sistema
-#                   caminho: trechos escolhidos pelo cliente
+#                   trechos: trechos escolhidos pelo cliente
 # Retorno ->        comprar: flag que indica se o caminho ainda está disponível (True) ou não (False)
 
 # Agora recebe essa estrutura: [ ('cuiabá', 'sao paulo'), ('minas', 'salvador') ]
-def verifica_trechos_escolhidos(G, caminho):
+def verifica_trechos_escolhidos(G, trechos):
     comprar = True
 
-    # Quantidade de trechos
-    for i in range(len(caminho)):
-
-        # Tamanho da tupla (origem e destino)
-        for j in range(len(caminho[i]) - 1):
-            trecho = (caminho[i][j], caminho[i][j + 1])
-
-            # Se algum trecho do caminho escolhido pelo cliente não tiver mais assento, caminho ta indisponível
-            if G[trecho[0]][trecho[1]]['assentos'] == 0:
-                comprar = False
-                break
+    for origem, destino in trechos:
+        # Se algum trecho do caminho escolhido pelo cliente não tiver mais assento, caminho ta indisponível
+        if G[origem][destino]['assentos'] == 0:
+            comprar = False
+            break
         
     return comprar
 
@@ -257,19 +248,14 @@ def registra_trechos_escolhidos(G, trechos, cpf):
     # Número do assento em cada trecho
     assentos = []
     
-    # Quantidade de trechos
-    for i in range(len(trechos)):
-        
-        # Tamanho da tupla (origem e destino)
-        for j in range(len(trechos[i]) - 1):
-            trecho = (trechos[i][j], trechos[i][j + 1])
-        
-            G[trecho[0]][trecho[1]]['assentos'] -= 1
-            G[trecho[0]][trecho[1]]['cpf'].append(cpf)
+    for origem, destino in trechos:
+        # Atualiza o número de assentos e associa o CPF ao trecho
+        G[origem][destino]['assentos'] -= 1
+        G[origem][destino]['cpf'].append(cpf)
 
-            # Adiciona número de assento referente a posição do cpf na lista de cada trecho
-            # Se um trecho tem 3 cpf's, o tamanho da sua lista é 3, logo o número do assento do ultimo cpf adicionado é 3
-            assentos.append(len(G[trecho[0]][trecho[1]]['cpf']))
+        # Adiciona número de assento referente a posição do cpf na lista de cada trecho
+        # Se um trecho tem 3 cpf's, o tamanho da sua lista é 3, logo o número do assento do ultimo cpf adicionado é 3
+        assentos.append(len(G[origem][destino]['cpf']))
     
     salvar_grafo(G)
 
@@ -292,18 +278,18 @@ def registra_trechos_escolhidos(G, trechos, cpf):
 #                  ],
 #      "6754234" : lista com compras desse cpf .....          
 #     }
+
+# Agora recebe essa estrutura: [ ('cuiabá', 'sao paulo'), ('minas', 'salvador') ]
 def registra_compra(G, cpf, trechos, assentos):
     valor_passagem = 0
     distancia_passagem = 0
 
-    # Itera sobre os trechos para guardar valor pago na soma desses trechos e distancia total desses trechos
-    for i in range(len(trechos)):
-        for j in range(len(trechos[i]) - 1):
-            trecho = (trechos[i][j], trechos[i][j + 1])
-            dist = G[trecho[0]][trecho[1]]['distancia']
+    # Itera sobre os trechos para calcular valor pago e a distância total
+    for origem, destino in trechos:
+        dist = G[origem][destino]['distancia']
 
-            valor_passagem += valor_trecho(dist)
-            distancia_passagem += dist
+        valor_passagem += valor_trecho(dist)  # Função para calcular valor com base na distância
+        distancia_passagem += dist
 
     # Carrega todas as compras do sistema
     compras =  carregar_passagens_compradas()
