@@ -1,13 +1,21 @@
 from utils_client import *
 from interface import mostrar_menu_principal, selecionar_cidades, selecionar_caminho, verificar_passagens_compradas, exibe_compras_cpf
+
 import requests
 
-server_url = "http://127.0.0.1:65433"
+SERVER_URL_A = "http://127.0.0.1:65433"
+SERVER_URL_B = "http://127.0.0.1:65433"
+SERVER_URL_C = "http://127.0.0.1:65433"
 #ou http://localhost:65433
 
+# Aqui o cliente que decide, botei server A pra testar
+server_url_atual = SERVER_URL_A
 
 def start_client():
     while True:
+
+        # Adicionar opção de escolha do servidor a conectar
+
         # Escolhe entre comprar uma passagem, ver passagens compradas em um CPF ou sair do programa
         escolha = mostrar_menu_principal()
 
@@ -35,23 +43,26 @@ def start_client():
                     
                     clear_terminal()
                     break
-                
 
+                origem = cidades[int(origem) - 1]
+                destino = cidades[int(destino) - 1]
+                
                 mensagem = {
                     "origem":origem,
                     "destino":destino
                 }
 
-               
-            
-                #usando get, para encontrar os caminhos de {origem} a {destino}
-                response = requests.get(server_url+"/caminhos", json=mensagem)
-
-
-                if response.status_code == 200:
-                    print("Caminhos encontrados:", response.json()["caminhos_encontrados"])
-                else:
-                    print("Erro:", response.status_code)
+                try:
+                    #usando get, para encontrar os caminhos de {origem} a {destino} do server B
+                    response_B = requests.get(server_url_atual+"/caminhos", json=mensagem, timeout=10)
+                    response_B.raise_for_status()  # Levanta um erro para códigos de status 4xx/5xx
+                
+                # Se der alguma merda, volta a escolher origem e destino
+                except (requests.exceptions.RequestException, Exception) as e:
+                    print(f"Ocorreu um erro: {e}") 
+                    continue
+                
+                # Se não der merda, sai do loop
                 break
             
             # Volta pro menu principal
@@ -62,7 +73,6 @@ def start_client():
             if sair:
                 break
 
-            
             caminhos = response.json()["caminhos_encontrados"]
 
             while True:
@@ -70,6 +80,9 @@ def start_client():
                 # exibe caminhos e aguarda escolha do usuário entre voltar ao menu principal, sair do programa
                 # ou tentar comprar um caminho
                 if caminhos:
+                    G = preenche_grafo(caminhos)
+
+                    caminhos_ordenados_distancia, caminhos_ordenados_valor = encontrar_caminhos(G, origem, destino)
                     # Caso cliente não consiga se conectar, enviar ou receber dados do servidor, 
                     # ele escolhe caminho e cpf de novo e tenta conectar e enviar ou receber os dados novamente
                     while True:

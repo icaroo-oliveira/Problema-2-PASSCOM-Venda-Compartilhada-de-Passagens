@@ -2,13 +2,9 @@ import heapq
 import json
 import networkx as nx
 
-cidades = ["Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
-            "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre"]
+ARQUIVO_GRAFO = 'grafo_A.json'
+ARQUIVO_PASSAGENS_COMPRADAS = 'passagens_A.json'
 
-ARQUIVO_GRAFO = 'grafo.json'
-ARQUIVO_PASSAGENS_COMPRADAS = 'passagens.json'
-ARQUIVO_GRAFO_B = 'grafo_b.json'
-ARQUIVO_PASSAGENS_COMPRADAS_B = 'passagens_b.json'
 # Constante que determina valor de 100km do servidor
 VALOR_100_KM = 115
 
@@ -33,9 +29,9 @@ def cria_arquivo_grafo():
         G = nx.DiGraph()
 
         # Caminhos de Cuiabá
-       
+        G.add_edge("Cuiabá", "Goiânia", distancia=890, assentos=3, cpf=[])
+        G.add_edge("Cuiabá", "Campo Grande", distancia=700, assentos=3, cpf=[])
         
-
         # Caminhos de Goiânia
         G.add_edge("Goiânia", "Cuiabá", distancia=890, assentos=3, cpf=[])
         G.add_edge("Goiânia", "Campo Grande", distancia=840, assentos=3, cpf=[])
@@ -145,32 +141,8 @@ def salvar_grafo(grafo_att):
         })
 
     # Salva novo grafo em arquivo
-    with open(ARQUIVO_GRAFO_B, 'w') as arq:
+    with open(ARQUIVO_GRAFO, 'w') as arq:
         json.dump(dados_novos, arq, indent=4)
-
-
-
-def salvar_grafo_B(grafo_att):
-    # Novo grafo a ser salvo em arquivo
-    dados_novos = {'trecho': []}
-
-    # Salva novos dados de cada trecho (atualiza na lista de cada trecho. LISTA = informações como distancia e etc)
-    for v1, v2, atributos in grafo_att.edges(data=True):
-        dados_novos['trecho'].append({
-            'v1': v1,
-            'v2': v2,
-            'distancia': atributos['distancia'],
-            'assentos': atributos['assentos'],
-            'cpf': atributos['cpf'],
-        })
-
-    # Salva novo grafo em arquivo
-    with open(ARQUIVO_GRAFO_B, 'w') as arq:
-        json.dump(dados_novos, arq, indent=4)
-
-
-
-
 
 # Função que salva um dicionário no arquivo (atualiza)
 # Parâmetros ->     dicionario_att: dicionario das passagens com informações atualizadas para ser salvo em arquivo
@@ -361,103 +333,17 @@ def desempacota_caminho_cliente(tupla):
         
     return servidores["A"], servidores["B"], servidores["C"]
 
-
-
-
-
-def cria_arquivo_grafo_B():
-    # Carregando o grafo a partir do arquivo JSON
-    try:
-        G = carregar_grafo_B()
-        print("Grafo carregado com sucesso.")
+# Verifica qual servidor encontrou caminho e adiciona numa lista
+# ps: Printa qual servidor encontrou ou não
+def servidor_encontrou_caminho(caminhos_A, caminhos_B, caminhos_C):
+    nomes_servidores = ['A', 'B', 'C']
+    caminhos_servidores = []
     
-    except FileNotFoundError:
-        print("Arquivo não encontrado. Criando um novo grafo.")
-        
-        # Criando um novo grafo e salvando
-        G = nx.DiGraph()
-
-        # Caminhos de Cuiabá
-        G.add_edge("Cuiabá", "Goiânia", distancia=890, assentos=3, cpf=[])
-        G.add_edge("Cuiabá", "Campo Grande", distancia=700, assentos=3, cpf=[])
-
-        # Caminhos de Goiânia
-        G.add_edge("Goiânia", "Cuiabá", distancia=890, assentos=3, cpf=[])
-        G.add_edge("Goiânia", "Campo Grande", distancia=840, assentos=3, cpf=[])
-        G.add_edge("Goiânia", "Belo Horizonte", distancia=890, assentos=3, cpf=[])
-
-        # Caminhos de Campo Grande
-        G.add_edge("Campo Grande", "Cuiabá", distancia=700, assentos=3, cpf=[])
-        G.add_edge("Campo Grande", "Goiânia", distancia=840, assentos=3, cpf=[])
-        G.add_edge("Campo Grande", "Belo Horizonte", distancia=1250, assentos=3, cpf=[])
-        G.add_edge("Campo Grande", "São Paulo", distancia=980, assentos=3, cpf=[])
-        G.add_edge("Campo Grande", "Curitiba", distancia=1000, assentos=3, cpf=[])
-
-        # Caminhos de Belo Horizonte
-        G.add_edge("Belo Horizonte", "Goiânia", distancia=890, assentos=3, cpf=[])
-        G.add_edge("Belo Horizonte", "Vitória", distancia=510, assentos=3, cpf=[])
-        G.add_edge("Belo Horizonte", "Campo Grande", distancia=1250, assentos=3, cpf=[])
-        G.add_edge("Belo Horizonte", "São Paulo", distancia=585, assentos=3, cpf=[])
-        G.add_edge("Belo Horizonte", "Rio de Janeiro", distancia=440, assentos=3, cpf=[])
-
-        # Caminhos de Vitória
-        G.add_edge("Vitória", "Belo Horizonte", distancia=510, assentos=3, cpf=[])
-        G.add_edge("Vitória", "Rio de Janeiro", distancia=520, assentos=3, cpf=[])
-
-        # Caminhos de São Paulo
-        G.add_edge("São Paulo", "Belo Horizonte", distancia=585, assentos=3, cpf=[])
-        G.add_edge("São Paulo", "Campo Grande", distancia=980, assentos=3, cpf=[])
-        G.add_edge("São Paulo", "Rio de Janeiro", distancia=440, assentos=3, cpf=[])
-        G.add_edge("São Paulo", "Curitiba", distancia=400, assentos=3, cpf=[])
-
-        # Caminhos de Rio de Janeiro
-        G.add_edge("Rio de Janeiro", "Vitória", distancia=520, assentos=3, cpf=[])
-        G.add_edge("Rio de Janeiro", "Belo Horizonte", distancia=440, assentos=3, cpf=[])
-        G.add_edge("Rio de Janeiro", "São Paulo", distancia=440, assentos=3, cpf=[])
-
-        # Caminhos de Curitiba
-        G.add_edge("Curitiba", "Campo Grande", distancia=1000, assentos=3, cpf=[])
-        G.add_edge("Curitiba", "São Paulo", distancia=400, assentos=3, cpf=[])
-        G.add_edge("Curitiba", "Florianópolis", distancia=300, assentos=3, cpf=[])
-
-        # Caminhos de Florianópolis
-        G.add_edge("Florianópolis", "Curitiba", distancia=300, assentos=3, cpf=[])
-        G.add_edge("Florianópolis", "Porto Alegre", distancia=460, assentos=3, cpf=[])
-
-        # Caminhos de Porto Alegre
-        G.add_edge("Porto Alegre", "Florianópolis", distancia=460, assentos=3, cpf=[])
-
-        # Estrutura é parecida com isso
-        # { 
-        #   ("São Paulo", "Rio de Janeiro") : {'distancia': 980, 'assentos': 3, 'cpf': [], 'valor': 1127},
-        #   ("Vitória", "Curitiba") : {'distancia': 34, 'assentos': 3, 'cpf': [], 'valor': 39,1},
-        #   ...
-        # }
-
-        # É um dicionário geral que armazena todas as conexões (grafo)
-        # As chaves desse dicionário são tuplas que armazenam a v1 e v2 (cidades com conexão)
-        # Os valores dessas chaves são dicionários, onde as chaves serão as distancias, assentos e cpf. Os valores
-        # dessas chaves são as informações desses dados, onde cpf é uma lista que guarda cpf's que compraram
-        # um assento do trecho (ou seja, lista[0] = cpf que comprou assento 1)
-        salvar_grafo_B(G)
-
-
-
-def carregar_grafo_B():
-    # Abre arquivo e retorna os dados do grafo
-    with open(ARQUIVO_GRAFO_B, 'r') as arq:
-        dados_existentes = json.load(arq)
+    for i, caminho in enumerate([caminhos_A, caminhos_B, caminhos_C]):
+        if caminho:
+            print(f"Servidor {nomes_servidores[i]} encontrou caminho.")
+            caminhos_servidores.append(caminho)
+        else:
+            print(f"Servidor {nomes_servidores[i]} não encontrou caminho.")
     
-    # Cria novo grafo para armazenar dados do grafo retornado
-    grafo = nx.DiGraph()
-
-    # Salva cada trecho no grafo
-    for trecho in dados_existentes['trecho']:
-        grafo.add_edge(
-            trecho['v1'], trecho['v2'], 
-            distancia = trecho['distancia'], 
-            assentos = trecho['assentos'],
-            cpf = trecho['cpf'],
-        )
-    
-    return grafo
+    return caminhos_servidores

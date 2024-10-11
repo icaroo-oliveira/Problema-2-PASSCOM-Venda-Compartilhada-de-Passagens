@@ -4,17 +4,6 @@ import time
 import heapq
 import networkx as nx
 
-################################################################
-
-def soma_valor(km):
-    valor = (km / 100) * 115  #so mechi aqui lucas, pra testar...
-    return round(valor, 2)
-
-
-###############################################################3
-
-
-
 cidades = ["Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
             "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre"]
 
@@ -120,7 +109,9 @@ def inicia_grafo():
 #               [ "B", ["curitiba", "bh", "rj", "sao paulo"], ["curitiba", "cuiabá", "sao paulo"] ],
 #               [ "C", ["curitiba", "bh", "rj", "sao paulo"], ["curitiba", "cuiabá", "sao paulo"] ]
 #          ]
-def preenche_grafo(G, lista):
+def preenche_grafo(lista):
+    G = inicia_grafo()
+
     # tamanho da lista geral - itera sobre os caminhos de todos os servidores
     for i in range(len(lista)):
         # Nome do servidor
