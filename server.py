@@ -3,6 +3,10 @@ import json
 import threading
 import queue
 from utils_server import *
+import requests
+import time
+B_Receive_buffer = None
+
 
 app = Flask(__name__)
 
@@ -13,9 +17,9 @@ lock = threading.Lock()
 # Fila de threads (FIFO)
 #waiting_queue = queue.Queue()
 
-
-
-
+precisa_comunicacaoB = False
+menssage_to_B = None
+precisa_comunicacao = False
 # se for usar trhead, coloca a logica das FIFOS para thread e codition aq dentro
 #funcao = funcao que quero executar...
 def process_threaded_task(funcao, *args):
@@ -35,26 +39,59 @@ def process_threaded_task(funcao, *args):
 #para acesso aos caminhos de {origem} até {destino}
 @app.route('/caminhos', methods=['GET'])
 def handle_caminhos():
+    global precisa_comunicacaoB
+    global menssage_to_B
     #transformando em dic 
     data = request.json
     #fazendo mesmo que antes
-    origem = data['origem']
-    destino = data['destino']
-    origem = cidades[int(origem) - 1]
-    destino = cidades[int(destino) - 1]
+    origem_1 = data['origem']
+    destino_1 = data['destino']
+    origem = cidades[int(origem_1) - 1]
+    destino = cidades[int(destino_1) - 1]
 
     # Processo de encontrar caminhos com threading
     def tarefa_caminhos(origem, destino):
-    
-        G = carregar_grafo()
+        global precisa_comunicacaoB
+        global menssage_to_B
+        try:
+            G = carregar_grafo()
+            caminhos = encontrar_caminhos(G, origem, destino)
+            if not caminhos:
+                print("Nenhum caminho encontrado. O cliente deve tentar outro servidor.")
+                return 404
+            
+            return caminhos
         
-        caminhos = encontrar_caminhos(G, origem, destino)
-        return caminhos
+        except Exception as e:
+            print(f"Erro ao processar: {str(e)}")
+            # precisa_comunicacao = True
+            return 500
+
 
     caminhos = process_threaded_task(tarefa_caminhos, origem, destino)
+    if isinstance(caminhos,(int,float)):
+        precisa_comunicacaoB = True
+        menssage_to_B = {
+            "origem":origem_1,
+            "destino":destino_1
+        }
 
-    print(caminhos)
-    return jsonify({"caminhos_encontrados": caminhos})
+        start_time = time.time()
+        timeout = 10  # tempo máximo de espera em segundos
+
+
+        while B_Receive_buffer is None and (time.time() - start_time) < timeout:
+            time.sleep(0.5)  # Aguardar meio segundo antes de verificar novamente
+
+        if B_Receive_buffer is not None:
+            return jsonify({"caminhos_encontrados": B_Receive_buffer['caminhos_encontrados']})
+        else:
+            return jsonify({"error": "Timeout: não foi possível receber os dados do servidor B."}), 504
+    
+    else:   
+        return jsonify({"caminhos_encontrados": caminhos})
+    
+    
 
 
 
@@ -105,9 +142,47 @@ def handle_passagens_compradas():
     return jsonify({"passagens_encontradas": passagens})
 
 
+
+
+
+def start_servent(): #servent = server + client, massa né kkkkkk servente ententedeu  HAHAHAHHAHAHAHAHAHHAHAHAHAHAAHAH
+
+    global precisa_comunicacaoB
+    global B_Receive_buffer
+    global menssage_to_B
+    server_url = "http://127.0.0.1:65434"  # URL do servidor
+
+    while True:
+         
+        # Exemplo de lógica para enviar uma solicitação
+        if precisa_comunicacaoB:
+            print("Iniciando comunicação com outro servidor B...")
+
+            try:
+                response = requests.get(server_url+"/caminhos", json=menssage_to_B)
+                if response.status_code == 200:
+                    # Processar a resposta como necessário
+                    B_Receive_buffer = response.json()
+                    print(f"Dados recebidos do servidor B: {B_Receive_buffer}")
+                else:
+                    print("Erro ao receber dados do servidor B.")
+            except Exception as e:
+                print(f"Erro na comunicação com o servidor B: {str(e)}")
+
+
+            precisa_comunicacaoB = False  # Resetar a variável após a comunicação
+
+
+
+
+
+
+
 if __name__ == "__main__":
     # O Flask usa `run` para iniciar o servidor HTTP
     cria_arquivo_grafo()
+    threading.Thread(target=start_servent, daemon=True).start()
     app.run(host='0.0.0.0', port=65433)
+    
 
 
