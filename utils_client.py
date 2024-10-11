@@ -4,6 +4,17 @@ import time
 import heapq
 import networkx as nx
 
+################################################################
+
+def soma_valor(km):
+    valor = (km / 100) * 115  #so mechi aqui lucas, pra testar...
+    return round(valor, 2)
+
+
+###############################################################3
+
+
+
 cidades = ["Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
             "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre"]
 
