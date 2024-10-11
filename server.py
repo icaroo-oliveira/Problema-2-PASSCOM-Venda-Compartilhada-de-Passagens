@@ -85,7 +85,7 @@ def handle_comprar():
             else:
                 return "Caminho indisponível"
 
-    resultado = process_threaded_task(tarefa_comprar, caminho, cpf)
+    resultado = process_threaded_task(tarefa_comprar, pares_consecutivos, cpf)
 
     return jsonify({"resultado": resultado})
 
