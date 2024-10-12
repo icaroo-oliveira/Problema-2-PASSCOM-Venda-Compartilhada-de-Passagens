@@ -8,6 +8,8 @@ ARQUIVO_PASSAGENS_COMPRADAS = 'passagens_A.json'
 # Constante que determina valor de 100km do servidor
 VALOR_100_KM = 115
 
+nomes_servidores = ["A", "B", "C"]
+
 # Função para calcular valor de um trecho
 # Parâmetros ->     km: quilometragem total de um trecho
 # Retorno ->        total: preço daquele trecho
@@ -202,6 +204,7 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
 
 # Se existir compras, retorna uma lista de dicionários, onde cada dicionário representa uma compra
 # ex: [ 
+#       "A",
 #       {'trechos': [ ('cuiabá', 'sao paulo'), ('minas', 'salvador') ], 'assentos': [1, 3], 'distancia': 1234, 'valor': 1000},
 #       {'trechos': [ ('berlim', 'sao paulo'), ('salvador', 'fsa'), ('serrinha', 'bomfim') ], 'assentos': [3, 2, 1], 'distancia': 1234, 'valor': 23954},      
 #     ]
@@ -211,7 +214,12 @@ def verifica_compras_cpf(cpf):
 
     if cpf in compras:
         print("Achei passagens")
-        return compras[cpf]
+        compras_cliente = compras[cpf]
+        
+        # Indica que é do server A
+        compras_cliente.insert(0, "A")
+        
+        return compras_cliente
     
     else:
         print("Não achei passagens")
@@ -335,11 +343,10 @@ def desempacota_caminho_cliente(tupla):
 
 # Verifica qual servidor encontrou caminho e adiciona numa lista
 # ps: Printa qual servidor encontrou ou não
-def servidor_encontrou_caminho(caminhos_A, caminhos_B, caminhos_C):
-    nomes_servidores = ['A', 'B', 'C']
+def servidor_encontrou_caminho(caminhos_a, caminhos_b, caminhos_c):
     caminhos_servidores = []
     
-    for i, caminho in enumerate([caminhos_A, caminhos_B, caminhos_C]):
+    for i, caminho in enumerate([caminhos_a, caminhos_b, caminhos_c]):
         if caminho:
             print(f"Servidor {nomes_servidores[i]} encontrou caminho.")
             caminhos_servidores.append(caminho)
@@ -347,3 +354,17 @@ def servidor_encontrou_caminho(caminhos_A, caminhos_B, caminhos_C):
             print(f"Servidor {nomes_servidores[i]} não encontrou caminho.")
     
     return caminhos_servidores
+
+# Verifica qual servidor encontrou passagens e adiciona numa lista
+# ps: Printa qual servidor encontrou ou não
+def servidor_encontrou_passagem(passagens_a, passagens_b, passagens_c):
+    passagens_servidores = []
+    
+    for i, caminho in enumerate([passagens_a, passagens_b, passagens_c]):
+        if caminho:
+            print(f"Servidor {nomes_servidores[i]} encontrou passagem.")
+            passagens_servidores.append(caminho)
+        else:
+            print(f"Servidor {nomes_servidores[i]} não encontrou passagem.")
+    
+    return passagens_servidores
