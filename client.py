@@ -62,7 +62,8 @@ def start_client():
                     
                     mensagem = {
                         "origem": origem,
-                        "destino": destino
+                        "destino": destino,
+                        "requerente": "cliente"
                     }
 
                     # Solicita que server atual retorne caminhos de Origem a Destino
@@ -92,7 +93,7 @@ def start_client():
                         # Caso cliente não consiga se conectar, enviar ou receber dados do servidor, 
                         # ele escolhe caminho e cpf de novo e tenta conectar e enviar ou receber os dados novamente
                         while True:
-                            escolha, cpf = selecionar_caminho(cidades, origem, destino, caminhos)
+                            escolha, cpf = selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_ordenados_valor)
 
                             # Encerra aplicação
                             if escolha == "0" or cpf == "0":
@@ -106,24 +107,43 @@ def start_client():
                                 clear_terminal()
                                 break
 
-
-                            caminho = caminhos[int(escolha)-1]
-
                             mensagem = {
-                                "caminho":caminho,
-                                "cpf":cpf
+                                "caminho": escolha,
+                                "cpf": cpf,
+                                "requerente": "cliente" 
                             }
 
+                            # Solicita que server atual afetue compra do caminho escolhido
+                            resposta, status = requests_post(server_url_atual, "/comprar", mensagem, "resultado", server_name_atual)
+                            if resposta is None:
+                                continue
                             
-                            response = requests.post(server_url+"/caminhos", json=mensagem)                       
+                            # Se não der merda, sai do loop
                             break
                         
                         # se escolheu sair ou ir pro menu principal, sai do while e volta ao menu principal ou encerra programa
                         if sair or menu:
                             break
 
+                        # Servidor enviou status indicando que compra foi feita, volta ao menu principal automaticamente
+                        if status == 200:
+                            imprime_divisoria()
+                            print("Compra feita com sucesso!")
+                            imprime_divisoria()
+                        
 
-                        print(response.json()["resultado"])
+                        # Por enquanto ta retornando pro menu principal, mas o certo é o servidor retornar novos caminhos
+                        # e cliente escolher de novo outro caminho
+
+
+                        # Servidor enviou status indicando que o caminho escolhido não estava mais disponível
+                        elif status == 400:
+                            imprime_divisoria()
+                            print("Caminho escolhido não mais disponível!")
+                            imprime_divisoria()
+
+                        sleep_clear(5)
+                        break
                         
                         
                     # Caso servidor retorne nenhum caminho, volta ao menu principal automaticamente
@@ -157,15 +177,18 @@ def start_client():
                         
                         clear_terminal()
                         break
-                    
-                    
-                    
+                                
                     mensagem = {
-                        "cpf":cpf
+                        "cpf": cpf,
+                        "requerente": "cliente"
                     }
 
+                    # Solicita que server atual retorne passagens compradas pelo cliente (cpf)
+                    passagens = requests_get(server_url_atual, "/passagens", mensagem, "passagens_encontradas", server_name_atual)
+                    if passagens is None:
+                        continue
                     
-                    response = requests.get(server_url+"/passagens", json=mensagem)
+                    # Se não der merda, sai do loop
                     break
                 
                 # Volta pro menu principal
@@ -175,10 +198,6 @@ def start_client():
                 # Fecha o programa
                 if sair:
                     break
-
-
-                passagens = response.json()["passagens_encontradas"]
-                print(passagens)
             
                 # Lista de dicionários. Cada dicionário = Uma compra de determinado CPF
                 # Se servidor encontrou passagens compradas no CPF, 

@@ -17,20 +17,27 @@ def handle_caminhos():
     # Pega origem e destino
     origem = data['origem']
     destino = data['destino']
-
-    # Lista para armazenar caminhos encontrados por servidor A, B e C
-    caminhos_servidores = []
+    requerente = data['requerente']
     
     # Carrega grafo e encontra caminho do servidor A
     G = carregar_grafo()
     caminhos_a = encontrar_caminhos(G, origem, destino)
+
+    # Como foi um servidor que pediu essa requisição, ele não precisa pedir a outros servidores caminhos
+    # pois outro servidor ta pedindo isso a ele
+    if requerente == "servidor":
+        return jsonify({"caminhos_encontrados": caminhos_a})
+
+    # Lista para armazenar caminhos encontrados por servidor A, B e C
+    caminhos_servidores = []
 
     # Pra receber caminhos do server B e C
     caminhos_b, caminhos_c = []
 
     mensagem = {
         "origem": origem,
-        "destino": destino
+        "destino": destino,
+        "requerente": "servidor"
     }
 
 
@@ -62,6 +69,7 @@ def handle_comprar():
     # Pega caminho e cpf escolhido pelo cliente
     caminho = data['caminho']
     cpf = data['cpf']
+    requerente = data['requerente']
     
     # Aqui vai usar para encontrar novamente caminhos novos caso algum server não tenha mais os trechos
     origem = caminho[1][0]
@@ -86,33 +94,40 @@ def handle_comprar():
 
     # Se servidor A tem os trechos ainda, envia os trechos do B e C para eles registrarem a compra tbm
     if comprar:
-        mensagem = {
-            "caminho": caminho,
-            "cpf": cpf
-        }
+
+        # Se quem chamou o método foi um cliente, servidor precisa enviar os trechos escolhidos pelo cliente para os 
+        # outros 2 servidores (caso o caminho escolhido possua algum trecho de outro servidor)
+
+        # Se quem chamou o método foi outro servidor, só preciso registrar a compra
+        if requerente == "cliente":
+            mensagem = {
+                "caminho": caminho,
+                "cpf": cpf,
+                "requerente": "servidor"
+            }
 
 
-        # Aqui adiciona thread para ENVIAR trechos do server B e C ao mesmo tempo
+            # Aqui adiciona thread para ENVIAR trechos do server B e C ao mesmo tempo
 
 
-        # Se tiver algum trecho a enviar ao server B
-        if trechos_server_b:
+            # Se tiver algum trecho a enviar ao server B
+            if trechos_server_b:
 
-            # Resposta da compra do server B
-            resposta_b = requests_post(SERVER_URL_B, "/comprar", mensagem, "resultado", "B")
-            print(f"{resposta_b}")
+                # Resposta da compra do server B
+                resposta_b, status_b = requests_post(SERVER_URL_B, "/comprar", mensagem, "resultado", "B")
+                print(f"{resposta_b}")
 
-        # Se tiver algum trecho a enviar ao server C
-        if trechos_server_c:
+            # Se tiver algum trecho a enviar ao server C
+            if trechos_server_c:
 
-            # Resposta da compra do server B
-            resposta_c = requests_post(SERVER_URL_C, "/comprar", mensagem, "resultado", "C")
-            print(f"{resposta_c}")
+                # Resposta da compra do server B
+                resposta_c, status_c = requests_post(SERVER_URL_C, "/comprar", mensagem, "resultado", "C")
+                print(f"{resposta_c}")
 
         # Como B e C já registrou a compra, server A registra tbm
         registra_trechos_escolhidos(G, trechos_server_a, cpf)
 
-        return jsonify({"resultado": "Compra realizada com sucesso"})
+        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
 
     # Se trechos do server A não tiverem mais disponíveis, nem precisa enviar os trechos do server B e C para eles
     # Aqui tem que implementar para caso A não tenha mais, ele peça pro B e C para enviar novamente seus caminhos encontrados
@@ -120,7 +135,7 @@ def handle_comprar():
 
     # Por enquanto só retorna que a compra deu merda
     else:
-        return jsonify({"resultado": "Caminho indisponível"})
+        return jsonify({"resultado": "Caminho indisponível"}), 400
 
 # Pra verificar compras de um cliente
 @app.route('/passagens', methods=['GET'])
@@ -130,18 +145,25 @@ def handle_passagens_compradas():
     
     # Pega cpf do cliente
     cpf = data['cpf']
-
-    # Lista para armazenar passagens encontrados por servidor A, B e C
-    passagens_servidores = []
+    requerente = data['requerente']
 
     # Verifica se tem passagens compradas por CPF no servidor A
     passagens_a = verifica_compras_cpf(cpf)
 
+    # Como foi um servidor que pediu essa requisição, ele não precisa pedir a outros servidores passagens
+    # pois outro servidor ta pedindo isso a ele
+    if requerente == "servidor":
+        return jsonify({"passagens_encontradas": passagens_a})
+
     # Pra receber passagens do server B e C
     passagens_b, passagens_c = []
 
+    # Lista para armazenar passagens encontrados por servidor A, B e C
+    passagens_servidores = []
+
     mensagem = {
-        "cpf":cpf
+        "cpf": cpf,
+        "requerente": "servidor"
     }
 
 

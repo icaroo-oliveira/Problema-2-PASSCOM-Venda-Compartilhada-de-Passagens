@@ -136,7 +136,7 @@ def preenche_grafo(lista):
     
     return G
 
-# Com o grafo já alimentado, cliente vai encontrar os 3 caminhos mais curtos e os 3 caminhos mais baratos
+# Com o grafo já alimentado, cliente vai encontrar os 5 caminhos mais curtos e os 5 caminhos mais baratos
 # Como grafo contém trecho de servidor A, B e C, os caminhos encontrados vão ter trechos de servidores misturados
 # Critério para caso mais de um servidor tenha encontrado determinado trecho:
 
@@ -147,7 +147,7 @@ def preenche_grafo(lista):
 # 2° Caminhos mais baratos
 # Caso um trecho tenha sido retornado por mais de um servidor, prefência será A -> B -> C, pois o km é mais barato
 
-# ps: Retorna um tupla com 2 listas: 1 com os 3 caminhos mais curtos, 1 com os 3 caminhos mais baratos
+# ps: Retorna um tupla com 2 listas: 1 com os 5 caminhos mais curtos, 1 com os 5 caminhos mais baratos
 # ps: Cada uma das lista é uma lista de tuplas onde ,  1° item da tupla = distancia total do caminho (lista 1°) ou valor total do caminho (lista 2°)
 #                                                      2° item da tupla = distancia total do caminho (lista 1°) ou valor total do caminho (lista 2°)
 #                                                      3° item da tupla = lista com os servidores de cada trecho
@@ -165,10 +165,10 @@ def preenche_grafo(lista):
 #                                   ... mais 1 pra fechar 3 (ou nao, se tiver menos que 3)  
 #                                ]
 def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
-    # Lista dos 3 caminhos mais curtos
+    # Lista dos 5 caminhos mais curtos
     caminhos_distancia = []
 
-    # Lista dos 3 caminhos mais baratos
+    # Lista dos 5 caminhos mais baratos
     caminhos_valor = []
     
     # Retorna todos os caminhos possíveis entre origem e destino
@@ -218,14 +218,14 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
             # Organiza os caminhos em fila de prioridade (menor ao maior) a depender do valor
             heapq.heappush(caminhos_valor, (valor_caminho, dist_caminho, servidores, path))
 
-    #caminhos_ordenados_distancia = [heapq.heappop(caminhos_distancia) for _ in range(min(len(caminhos_distancia), 3))]
+    #caminhos_ordenados_distancia = [heapq.heappop(caminhos_distancia) for _ in range(min(len(caminhos_distancia), 5))]
 
-    #caminhos_ordenados_valor = [heapq.heappop(caminhos_valor) for _ in range(min(len(caminhos_valor), 3))]
+    #caminhos_ordenados_valor = [heapq.heappop(caminhos_valor) for _ in range(min(len(caminhos_valor), 5))]
 
-    # Obtém os 3 melhores caminhos (se existirem)
-    caminhos_ordenados_distancia = heapq.nsmallest(3, caminhos_distancia)
+    # Obtém os 5 melhores caminhos (se existirem)
+    caminhos_ordenados_distancia = heapq.nsmallest(5, caminhos_distancia)
     
-    caminhos_ordenados_valor = heapq.nsmallest(3, caminhos_valor)
+    caminhos_ordenados_valor = heapq.nsmallest(5, caminhos_valor)
     
     return caminhos_ordenados_distancia, caminhos_ordenados_valor
 

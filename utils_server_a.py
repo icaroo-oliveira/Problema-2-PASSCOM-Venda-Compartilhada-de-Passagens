@@ -360,10 +360,10 @@ def servidor_encontrou_caminho(caminhos_a, caminhos_b, caminhos_c):
 def servidor_encontrou_passagem(passagens_a, passagens_b, passagens_c):
     passagens_servidores = []
     
-    for i, caminho in enumerate([passagens_a, passagens_b, passagens_c]):
-        if caminho:
+    for i, passagem in enumerate([passagens_a, passagens_b, passagens_c]):
+        if passagem:
             print(f"Servidor {nomes_servidores[i]} encontrou passagem.")
-            passagens_servidores.append(caminho)
+            passagens_servidores.append(passagem)
         else:
             print(f"Servidor {nomes_servidores[i]} não encontrou passagem.")
     

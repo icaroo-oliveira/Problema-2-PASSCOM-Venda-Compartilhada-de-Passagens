@@ -25,9 +25,9 @@ def requests_post(server_url, identificador, mensagem, chave_dicionario, nome_se
         # Resultado da compra
         resposta = response.json()[chave_dicionario]
 
-        return resposta    
+        return resposta, response.status_code 
     
     # Caso request de algum erro de conexão, timeout e etc
     except (requests.exceptions.RequestException, Exception) as e:
         print(f"Ocorreu um erro no servidor {nome_servidor}: {e}") 
-        return None
+        return None, None

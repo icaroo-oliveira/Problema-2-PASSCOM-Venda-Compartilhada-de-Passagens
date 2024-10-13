@@ -60,17 +60,32 @@ def selecionar_cidades(cidades):
 #                   caminhos: lista de caminhos encontrados retornados pelo servidor
 # Retorno ->        escolha: entrada do cliente do caminho escolhido
 #                   cpf: cpf do cliente
-def selecionar_caminho(cidades, origem, destino, caminhos):
+def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_ordenados_valor):
     imprime_divisoria()
     
-    print(f"Trechos de {cidades[int(origem)-1]} para {cidades[int(destino)-1]}:\n")
-    for i, (path) in enumerate(caminhos):
-        print(f"{i+1}. Caminho: {' -> '.join(path)} | km | R$ \n")
+    # Lista unificada para armazenar os caminhos - Junta as 2 listas para melhorar identificação
+    # da escolha do caminho pelo cliente
+    caminhos_unificados = []
+
+    print(f"Trechos de {origem} para {destino}:\n")
+
+    print("Caminhos mais curtos: ")
+    for dist, valor, nome_servidor, path in caminhos_ordenados_distancia:
+        caminhos_unificados.append((dist, valor, nome_servidor, path))
+        print(f"{len(caminhos_unificados)}. Caminho: {' -> '.join(path)} | {dist}km | R$ {valor}")
+        print(f"{len(caminhos_unificados)}. Servidores: {' -> '.join(nome_servidor)}\n")
+
+    print("Caminhos mais baratos: ")
+    for valor, dist, nome_servidor, path in caminhos_ordenados_valor:
+        caminhos_unificados.append((valor, dist, nome_servidor, path))
+        print(f"{len(caminhos_unificados)}. Caminho: {' -> '.join(path)} | {dist}km | R$ {valor}")
+        print(f"{len(caminhos_unificados)}. Servidores: {' -> '.join(nome_servidor)}\n")
+    
     print("0- Encerrar programa\n100- Menu\n")
 
     while True:
         escolha = input("Escolha um caminho: ")
-        if escolha.isdigit() and (0 <= int(escolha) <= len(caminhos) or int(escolha) == 100):
+        if escolha.isdigit() and (0 <= int(escolha) <= len(caminhos_unificados) or int(escolha) == 100):
             break
         print("Entrada inválida.")
 
@@ -83,7 +98,15 @@ def selecionar_caminho(cidades, origem, destino, caminhos):
             break
         print("Entrada inválida.")
     
-    return escolha, cpf
+    # EX: (223, 300, ["A", "B"], ["curitiba", "cuiabá", "sao paulo"])
+    caminho = caminhos_unificados[int(escolha) - 1]
+
+    # EX: (["A", "B"], ["curitiba", "cuiabá", "sao paulo"])
+    # Retorno ao servidor apenas os trechos e a quem pertence cada trecho
+    path = (caminho[2], caminho[3])
+    
+    # Retorna caminho escolhido e cpf
+    return path, cpf
 
 # Função que exibe em tela menu de escolha de cpf para ter acesso as passagens compradas
 def verificar_passagens_compradas():
@@ -102,20 +125,46 @@ def verificar_passagens_compradas():
 # Parâmetros ->     cpf: cpf do cliente
 #                   passagens: lista de compras de passagens de um cliente
 # Retorno ->        escolha: entrada do cliente entre menu principal (100) ou encerrar programa (0)
+
+# Recebe essa estrutura
+#    [
+#       [ 
+#           "A",
+#           {'trechos': [ ('cuiabá', 'sao paulo'), ('minas', 'salvador') ], 'assentos': [1, 3], 'distancia': 1234, 'valor': 1000},
+#           {'trechos': [ ('berlim', 'sao paulo'), ('salvador', 'fsa'), ('serrinha', 'bomfim') ], 'assentos': [3, 2, 1], 'distancia': 1234, 'valor': 23954},      
+#       ],
+
+#       [ 
+#           "B",
+#           {'trechos': [ ('cuiabá', 'sao paulo'), ('minas', 'salvador') ], 'assentos': [1, 3], 'distancia': 1234, 'valor': 1000},
+#           {'trechos': [ ('berlim', 'sao paulo'), ('salvador', 'fsa'), ('serrinha', 'bomfim') ], 'assentos': [3, 2, 1], 'distancia': 1234, 'valor': 23954},      
+#       ],
+#       
+#       [ 
+#           "C",
+#           {'trechos': [ ('cuiabá', 'sao paulo'), ('minas', 'salvador') ], 'assentos': [1, 3], 'distancia': 1234, 'valor': 1000},
+#           {'trechos': [ ('berlim', 'sao paulo'), ('salvador', 'fsa'), ('serrinha', 'bomfim') ], 'assentos': [3, 2, 1], 'distancia': 1234, 'valor': 23954},      
+#       ]
+#   ]
+
 def exibe_compras_cpf(cpf, passagens):
     imprime_divisoria()
     print(f"Compras do CPF {cpf}: \n")
 
-    # Exibe todas as compras associadas a um CPF
-    for i, compra in enumerate(passagens, 1):
-        # Exibe caminho (todos os trechos), distancia total e valor
-        print(f"Compra {i}: {' -> '.join(compra['caminho'])} | {compra['distancia']}km | R$ {compra['valor']}")
+    # Itera sobre a lista toda
+    for i in range(len(passagens)):
+        print(f"*Servidor {passagens[i][0]}*")
 
-        # Exibe número do assento de cada trecho do caminho
-        for i in range(len(compra["assentos"])):
-            print(f"{i+1}.Trecho {compra['caminho'][i]} -> {compra['caminho'][i+1]}: Assento -> {compra['assentos'][i]}")
-        
-        print("")
+        # Itera sobre um item da lista = todas as compras em um servidor
+        # [1:] ignora primeiro item da lista -> nome do servidor que retornou as passagens da lista
+        for j, compra in enumerate(passagens[i][1:], 1):
+            print(f"Compra {j} - {compra['distancia']}km | R$ {compra['valor']}")
+            
+            # Itera sobre os trechos de uma compra dentre as n compras de um servidor
+            for k, (origem, destino) in enumerate(compra['trechos']):
+                print(f"{k+1}.Trecho {origem} -> {destino} | Assento: {compra['assentos'][k]}")
+            
+            print()
 
     while True:
         escolha = input("0- Encerrar programa\n100- Menu\n\n>>> ")
