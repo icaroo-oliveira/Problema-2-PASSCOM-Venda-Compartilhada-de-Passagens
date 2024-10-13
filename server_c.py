@@ -6,7 +6,7 @@ from connection import *
 app = Flask(__name__)
 
 SERVER_URL_B = "http://127.0.0.1:65434"
-SERVER_URL_C = "http://127.0.0.1:65435"
+SERVER_URL_A = "http://127.0.0.1:65433"
 
 # Retorna caminhos encontrados de origem a destino
 @app.route('/caminhos', methods=['GET'])
@@ -19,20 +19,20 @@ def handle_caminhos():
     destino = data['destino']
     requerente = data['requerente']
     
-    # Carrega grafo e encontra caminho do servidor A
+    # Carrega grafo e encontra caminho do servidor C
     G = carregar_grafo()
-    caminhos_a = encontrar_caminhos(G, origem, destino)
+    caminhos_c = encontrar_caminhos(G, origem, destino)
 
     # Como foi um servidor que pediu essa requisição, ele não precisa pedir a outros servidores caminhos
     # pois outro servidor ta pedindo isso a ele
     if requerente == "servidor":
-        return jsonify({"caminhos_encontrados": caminhos_a})
+        return jsonify({"caminhos_encontrados": caminhos_c})
 
     # Lista para armazenar caminhos encontrados por servidor A, B e C
     caminhos_servidores = []
 
-    # Pra receber caminhos do server B e C
-    caminhos_b, caminhos_c = []
+    # Pra receber caminhos do server B e A
+    caminhos_b, caminhos_a = []
 
     mensagem = {
         "origem": origem,
@@ -42,15 +42,15 @@ def handle_caminhos():
 
 
 
-    # Aqui adiciona thread para pedir caminho do server B e C ao mesmo tempo
+    # Aqui adiciona thread para pedir caminho do server B e A ao mesmo tempo
 
 
 
     # Caminhos encontrados pelo server B
     caminhos_b = requests_get(SERVER_URL_B, "/caminhos", mensagem, "caminhos_encontrados", "B")
 
-    # Caminhos encontrados pelo server C
-    caminhos_c = requests_get(SERVER_URL_C, "/caminhos", mensagem, "caminhos_encontrados", "C")
+    # Caminhos encontrados pelo server A
+    caminhos_a = requests_get(SERVER_URL_A, "/caminhos", mensagem, "caminhos_encontrados", "A")
 
 
 
@@ -80,19 +80,19 @@ def handle_comprar():
 
     G = carregar_grafo()
     
-    # Vê se trechos do server A ainda tão disponíveis
-    comprar = verifica_trechos_escolhidos(G, trechos_server_a)
+    # Vê se trechos do server C ainda tão disponíveis
+    comprar = verifica_trechos_escolhidos(G, trechos_server_c)
 
 
-    # Aqui que a merda acontece, não posso gravar a compras dos trechos no arquivo do server A, porque se
-    # o server B ou C não tiver mais os seus trechos disponíveis, não posso gravar em nenhum server.
+    # Aqui que a merda acontece, não posso gravar a compras dos trechos no arquivo do server C, porque se
+    # o server B ou A não tiver mais os seus trechos disponíveis, não posso gravar em nenhum server.
     # Teria que verificar nos 3 server ao mesmo tempo e gravar neles ao mesmo tempo
 
-    # Por enquanto ta o cenário perfeito, server A consegue se comunicar com B e C, e eles
+    # Por enquanto ta o cenário perfeito, server C consegue se comunicar com B e A, e eles
     # conseguem comprar os trechos numa boa
 
 
-    # Se servidor A tem os trechos ainda, envia os trechos do B e C para eles registrarem a compra tbm
+    # Se servidor C tem os trechos ainda, envia os trechos do B e A para eles registrarem a compra tbm
     if comprar:
 
         # Se quem chamou o método foi um cliente, servidor precisa enviar os trechos escolhidos pelo cliente para os 
@@ -107,7 +107,7 @@ def handle_comprar():
             }
 
 
-            # Aqui adiciona thread para ENVIAR trechos do server B e C ao mesmo tempo
+            # Aqui adiciona thread para ENVIAR trechos do server B e A ao mesmo tempo
 
 
             # Se tiver algum trecho a enviar ao server B
@@ -117,15 +117,15 @@ def handle_comprar():
                 resposta_b, status_b = requests_post(SERVER_URL_B, "/comprar", mensagem, "resultado", "B")
                 print(f"{resposta_b}")
 
-            # Se tiver algum trecho a enviar ao server C
-            if trechos_server_c:
+            # Se tiver algum trecho a enviar ao server A
+            if trechos_server_a:
 
-                # Resposta da compra do server C
-                resposta_c, status_c = requests_post(SERVER_URL_C, "/comprar", mensagem, "resultado", "C")
-                print(f"{resposta_c}")
+                # Resposta da compra do server A
+                resposta_a, status_a = requests_post(SERVER_URL_A, "/comprar", mensagem, "resultado", "A")
+                print(f"{resposta_a}")
 
-        # Como B e C já registrou a compra, server A registra tbm
-        registra_trechos_escolhidos(G, trechos_server_a, cpf)
+        # Como B e A já registrou a compra, server C registra tbm
+        registra_trechos_escolhidos(G, trechos_server_c, cpf)
 
         return jsonify({"resultado": "Compra realizada com sucesso"}), 200
 
@@ -147,16 +147,16 @@ def handle_passagens_compradas():
     cpf = data['cpf']
     requerente = data['requerente']
 
-    # Verifica se tem passagens compradas por CPF no servidor A
-    passagens_a = verifica_compras_cpf(cpf)
+    # Verifica se tem passagens compradas por CPF no servidor C
+    passagens_c = verifica_compras_cpf(cpf)
 
     # Como foi um servidor que pediu essa requisição, ele não precisa pedir a outros servidores passagens
     # pois outro servidor ta pedindo isso a ele
     if requerente == "servidor":
-        return jsonify({"passagens_encontradas": passagens_a})
+        return jsonify({"passagens_encontradas": passagens_c})
 
-    # Pra receber passagens do server B e C
-    passagens_b, passagens_c = []
+    # Pra receber passagens do server B e A
+    passagens_b, passagens_a = []
 
     # Lista para armazenar passagens encontrados por servidor A, B e C
     passagens_servidores = []
@@ -167,14 +167,14 @@ def handle_passagens_compradas():
     }
 
 
-    # Aqui adiciona thread para pedir passagens do server B e C ao mesmo tempo
+    # Aqui adiciona thread para pedir passagens do server B e A ao mesmo tempo
 
 
     # Passagens encontrados pelo server B
     passagens_b = requests_get(SERVER_URL_B, "/passagens", mensagem, "passagens_encontradas", "B")
 
-    # Passagens encontrados pelo server C
-    passagens_c = requests_get(SERVER_URL_C, "/passagens", mensagem, "passagens_encontradas", "C")
+    # Passagens encontrados pelo server A
+    passagens_a = requests_get(SERVER_URL_A, "/passagens", mensagem, "passagens_encontradas", "A")
 
 
     # Verifica qual servidor retornou pelo menos uma passagem e adiona numa lista pra enviar ao cliente
