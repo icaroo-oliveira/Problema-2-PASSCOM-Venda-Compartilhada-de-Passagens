@@ -2,8 +2,6 @@ from utils_client import *
 from interface import *
 from connection import *
 
-import requests
-
 SERVER_URL_A = "http://127.0.0.1:65433"
 SERVER_URL_B = "http://127.0.0.1:65434"
 SERVER_URL_C = "http://127.0.0.1:65435"
@@ -24,6 +22,8 @@ def start_client():
         if escolha2 == '0':
             break
         
+        clear_terminal()
+
         # Define server a se conectar a depender da resposta do cliente
         server_url_atual = SERVERS_URLS[int(escolha2) - 1]
         server_name_atual = nomes_servidores[int(escolha2) - 1]
@@ -33,6 +33,7 @@ def start_client():
             escolha = mostrar_menu_principal(server_name_atual)
 
             if escolha == '0' or escolha == '3':
+                clear_terminal()
                 break
 
             sair = 0

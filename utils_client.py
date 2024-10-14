@@ -218,10 +218,6 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
             # Organiza os caminhos em fila de prioridade (menor ao maior) a depender do valor
             heapq.heappush(caminhos_valor, (valor_caminho, dist_caminho, servidores, path))
 
-    #caminhos_ordenados_distancia = [heapq.heappop(caminhos_distancia) for _ in range(min(len(caminhos_distancia), 5))]
-
-    #caminhos_ordenados_valor = [heapq.heappop(caminhos_valor) for _ in range(min(len(caminhos_valor), 5))]
-
     # Obtém os 5 melhores caminhos (se existirem)
     caminhos_ordenados_distancia = heapq.nsmallest(5, caminhos_distancia)
     

@@ -4,7 +4,7 @@ def escolhe_servidor():
     imprime_divisoria()
     
     while True:
-        escolha = input("1- Servidor A\n2- Servidor B\n3- Servidor C\n0- Encerrar programa\n\n>>> ")
+        escolha = input("1- Servidor A\n2- Servidor B\n3- Servidor C\n\n0- Encerrar programa\n\n>>> ")
         if escolha in ['0', '1', '2', '3']:
             break
         print("\nEntrada inválida.\n")
@@ -14,7 +14,7 @@ def escolhe_servidor():
 # Função que exibe em tela menu principal e suas opções
 def mostrar_menu_principal(nome_servidor):
     imprime_divisoria()
-    print(f"\t\t\tSistema de Vendas de Passagens - Servidor {nome_servidor}")
+    print(f"\t\t\t\tSistema de Vendas de Passagens - Servidor {nome_servidor}")
     imprime_divisoria()
 
     while True:
