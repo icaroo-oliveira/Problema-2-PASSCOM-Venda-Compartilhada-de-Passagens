@@ -153,7 +153,7 @@ def salvar_passagem_comprada(dicionario_att):
     with open(ARQUIVO_PASSAGENS_COMPRADAS, 'w') as arq:
         json.dump(dicionario_att, arq, indent=4)
 
-# Função que encontra 5 caminhos entre origem e destino, e retorna ordenado considerando distancia total (menor ao maior)
+# Função que encontra 10 caminhos entre origem e destino, e retorna ordenado considerando distancia total (menor ao maior)
 # Parâmetros ->     grafo: grafo dos trechos
 #                   cidade_inicial: cidade origem para encontrar caminhos
 #                   cidade_fim: cidade destino para encontrar caminhos
@@ -164,7 +164,7 @@ def salvar_passagem_comprada(dicionario_att):
 #           "A",
 #           ["curitiba", "bh", "rj", "sao paulo"],
 #           ["curitiba", "cuiabá", "sao paulo"],
-#           ... mais 3 pra fechar 5 (ou nao, se achar menos que 5)  
+#           ... mais 8 pra fechar 10 (ou nao, se achar menos que 10)  
 #      ]
 def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
     caminhos = []
@@ -190,7 +190,7 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
     # Se houver pelo menos um caminho válido, extrai os caminhos e insere "A" no início. Não precisa mais da distância
     if caminhos:
         caminhos_ordenados = ["A"]  # Esse "A" vai indicar que os caminhos são do servidor A
-        caminhos_ordenados.extend([heapq.heappop(caminhos)[1] for _ in range(min(len(caminhos), 5))])
+        caminhos_ordenados.extend([heapq.heappop(caminhos)[1] for _ in range(min(len(caminhos), 10))])
     
     # Caso não haja caminhos válidos, retorna uma lista vazia
     else:
@@ -213,7 +213,6 @@ def verifica_compras_cpf(cpf):
     compras = carregar_passagens_compradas()
 
     if cpf in compras:
-        print("Achei passagens")
         compras_cliente = compras[cpf]
         
         # Indica que é do server A
@@ -222,7 +221,6 @@ def verifica_compras_cpf(cpf):
         return compras_cliente
     
     else:
-        print("Não achei passagens")
         return []
 
 # Função para verificar se os trechos escolhidos pelo cliente ainda estão disponível (compara com o arquivo atual)

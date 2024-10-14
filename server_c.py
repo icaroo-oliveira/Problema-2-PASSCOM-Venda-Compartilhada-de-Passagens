@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify
 
-from utils_server_a import *
+from utils_server_c import *
 from connection import *
 
 app = Flask(__name__)
+
+HOST = '0.0.0.0'
+PORTA = 65435
 
 SERVER_URL_B = "http://127.0.0.1:65434"
 SERVER_URL_A = "http://127.0.0.1:65433"
@@ -32,7 +35,8 @@ def handle_caminhos():
     caminhos_servidores = []
 
     # Pra receber caminhos do server B e A
-    caminhos_b, caminhos_a = []
+    caminhos_b = []
+    caminhos_a = []
 
     mensagem = {
         "origem": origem,
@@ -123,9 +127,10 @@ def handle_comprar():
                 # Resposta da compra do server A
                 resposta_a, status_a = requests_post(SERVER_URL_A, "/comprar", mensagem, "resultado", "A")
                 print(f"{resposta_a}")
-
-        # Como B e A já registrou a compra, server C registra tbm
-        registra_trechos_escolhidos(G, trechos_server_c, cpf)
+        
+        if trechos_server_c:
+            # Como B e A já registrou a compra, server C registra tbm
+            registra_trechos_escolhidos(G, trechos_server_c, cpf)
 
         return jsonify({"resultado": "Compra realizada com sucesso"}), 200
 
@@ -156,7 +161,8 @@ def handle_passagens_compradas():
         return jsonify({"passagens_encontradas": passagens_c})
 
     # Pra receber passagens do server B e A
-    passagens_b, passagens_a = []
+    passagens_b = []
+    passagens_a = []
 
     # Lista para armazenar passagens encontrados por servidor A, B e C
     passagens_servidores = []
@@ -192,7 +198,7 @@ if __name__ == "__main__":
     try:
         # host -> servidor acessível por outros dispositivos na mesma rede
         # port -> do servidor em questão
-        app.run(host='0.0.0.0', port=65433)
+        app.run(host=HOST, port=PORTA)
 
     # Se app.run der merda, exibe a merda e encerra programa
     except (OSError, Exception) as e:

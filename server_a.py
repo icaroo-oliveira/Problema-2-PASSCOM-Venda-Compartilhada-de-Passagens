@@ -5,6 +5,9 @@ from connection import *
 
 app = Flask(__name__)
 
+HOST = '0.0.0.0'
+PORTA = 65433
+
 SERVER_URL_B = "http://127.0.0.1:65434"
 SERVER_URL_C = "http://127.0.0.1:65435"
 
@@ -32,7 +35,8 @@ def handle_caminhos():
     caminhos_servidores = []
 
     # Pra receber caminhos do server B e C
-    caminhos_b, caminhos_c = []
+    caminhos_b = []
+    caminhos_c = []
 
     mensagem = {
         "origem": origem,
@@ -51,8 +55,6 @@ def handle_caminhos():
 
     # Caminhos encontrados pelo server C
     caminhos_c = requests_get(SERVER_URL_C, "/caminhos", mensagem, "caminhos_encontrados", "C")
-
-
 
     # Verifica qual servidor retornou pelo menos um caminho e adiona numa lista pra enviar ao cliente
     caminhos_servidores = servidor_encontrou_caminho(caminhos_a, caminhos_b, caminhos_c)
@@ -124,8 +126,9 @@ def handle_comprar():
                 resposta_c, status_c = requests_post(SERVER_URL_C, "/comprar", mensagem, "resultado", "C")
                 print(f"{resposta_c}")
 
-        # Como B e C já registrou a compra, server A registra tbm
-        registra_trechos_escolhidos(G, trechos_server_a, cpf)
+        if trechos_server_a:
+            # Como B e C já registrou a compra, server A registra tbm
+            registra_trechos_escolhidos(G, trechos_server_a, cpf)
 
         return jsonify({"resultado": "Compra realizada com sucesso"}), 200
 
@@ -156,7 +159,8 @@ def handle_passagens_compradas():
         return jsonify({"passagens_encontradas": passagens_a})
 
     # Pra receber passagens do server B e C
-    passagens_b, passagens_c = []
+    passagens_b = []
+    passagens_c = []
 
     # Lista para armazenar passagens encontrados por servidor A, B e C
     passagens_servidores = []
@@ -192,7 +196,7 @@ if __name__ == "__main__":
     try:
         # host -> servidor acessível por outros dispositivos na mesma rede
         # port -> do servidor em questão
-        app.run(host='0.0.0.0', port=65433)
+        app.run(host=HOST, port=PORTA)
 
     # Se app.run der merda, exibe a merda e encerra programa
     except (OSError, Exception) as e:
