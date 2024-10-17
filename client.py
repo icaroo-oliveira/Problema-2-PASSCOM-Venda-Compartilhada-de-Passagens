@@ -63,12 +63,11 @@ def start_client():
                     
                     mensagem = {
                         "origem": origem,
-                        "destino": destino,
-                        "requerente": "cliente"
+                        "destino": destino
                     }
 
                     # Solicita que server atual retorne caminhos de Origem a Destino
-                    caminhos = requests_get(server_url_atual, "/caminhos", mensagem, "caminhos_encontrados", server_name_atual)
+                    caminhos = requests_get(server_url_atual, "/caminhos_cliente", mensagem, "caminhos_encontrados", server_name_atual)
                     if caminhos is None:
                         continue
                     
@@ -110,12 +109,11 @@ def start_client():
 
                             mensagem = {
                                 "caminho": escolha,
-                                "cpf": cpf,
-                                "requerente": "cliente" 
+                                "cpf": cpf
                             }
 
                             # Solicita que server atual afetue compra do caminho escolhido
-                            resposta, status = requests_post(server_url_atual, "/comprar", mensagem, "resultado", server_name_atual)
+                            resposta, status = requests_post(server_url_atual, "/comprar_cliente", mensagem, "resultado", server_name_atual)
                             if resposta is None:
                                 continue
                             
@@ -180,12 +178,11 @@ def start_client():
                         break
                                 
                     mensagem = {
-                        "cpf": cpf,
-                        "requerente": "cliente"
+                        "cpf": cpf
                     }
 
                     # Solicita que server atual retorne passagens compradas pelo cliente (cpf)
-                    passagens = requests_get(server_url_atual, "/passagens", mensagem, "passagens_encontradas", server_name_atual)
+                    passagens = requests_get(server_url_atual, "/passagens_cliente", mensagem, "passagens_encontradas", server_name_atual)
                     if passagens is None:
                         continue
                     
