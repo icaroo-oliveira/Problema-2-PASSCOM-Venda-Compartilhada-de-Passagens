@@ -166,7 +166,9 @@ def salvar_passagem_comprada(dicionario_att):
 #           ["curitiba", "cuiabá", "sao paulo"],
 #           ... mais 8 pra fechar 10 (ou nao, se achar menos que 10)  
 #      ]
-def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
+def encontrar_caminhos(cidade_inicial, cidade_fim):
+    grafo = carregar_grafo()
+    
     caminhos = []
     
     # Retorna todos os caminhos possíveis entre origem e destino
