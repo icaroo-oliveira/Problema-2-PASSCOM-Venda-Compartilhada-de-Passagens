@@ -31,6 +31,22 @@ def requests_post(server_url, requisicao, mensagem, chave_dicionario, nome_servi
     except (requests.exceptions.RequestException, Exception) as e:
         print(f"Ocorreu um erro no servidor {nome_servidor}: {e}") 
         return None, None
+    
+# Requisições do tipo delete (ROLLBACK)
+def requests_delete(server_url, requisicao, mensagem, chave_dicionario, nome_servidor):
+    try:
+        response = requests.delete(server_url+requisicao, json=mensagem, timeout=10)
+        response.raise_for_status()  # Levanta um erro para códigos de status 4xx/5xx
+
+        # Resultado da compra
+        resposta = response.json()[chave_dicionario]
+
+        return resposta
+    
+    # Caso request de algum erro de conexão, timeout e etc
+    except (requests.exceptions.RequestException, Exception) as e:
+        print(f"Ocorreu um erro no servidor {nome_servidor}: {e}") 
+        return None
 
 # Função para solicitar caminhos ou passagens de um servidor específico
 def solicitar_caminhos_ou_passagens(server_url, mensagem, chave_dicionario, nome_servidor, resultados, requisicao):
