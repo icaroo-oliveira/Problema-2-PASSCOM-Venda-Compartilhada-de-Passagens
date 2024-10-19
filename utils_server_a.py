@@ -297,7 +297,7 @@ def registra_compra(G, cpf, trechos, assentos):
         distancia_passagem += dist
 
     # Carrega todas as compras do sistema
-    compras =  carregar_passagens_compradas()
+    compras = carregar_passagens_compradas()
 
     # Cria uma nova compra
     compra_att = {"trechos": trechos, "assentos": assentos, "distancia": distancia_passagem, "valor": valor_passagem}
@@ -309,6 +309,41 @@ def registra_compra(G, cpf, trechos, assentos):
     # Se não existir, cria uma nova chave no dicionário geral
     else:
         compras[cpf] = [compra_att]
+
+    # Salva dicionário atualizado no arquivo
+    salvar_passagem_comprada(compras)
+
+# ROLLBACK
+def desregistra_trechos_escolhidos(trechos, cpf):
+    G = carregar_grafo()
+    
+    for origem, destino in trechos:
+        # Atualiza o número de assentos e retira cpf da compra do trecho
+        G[origem][destino]['assentos'] += 1
+
+        # Encontra o índice da última ocorrência do cpf na lista do trecho
+        ultimo_indice = len(G[origem][destino]['cpf']) - 1 - G[origem][destino]['cpf'][::-1].index(cpf)
+    
+        # Remove a ultima ocorrencia daquele cpf na lista
+        G[origem][destino]['cpf'].pop(ultimo_indice)
+    
+    salvar_grafo(G)
+
+    # Atualiza dicionário com nova passagem comprada e salva em arquivo
+    desregistra_compra(cpf)
+
+# ROLLBACK
+def desregistra_compra(cpf):
+    # Carrega todas as compras do sistema
+    compras = carregar_passagens_compradas()
+    
+    # Remove a ultima compra associada ao cpf
+    compras[cpf].pop()
+
+    # Verifica se após a remoção, existe ainda alguma compra associada ao cpf
+    # Se não tiver mais nenhuma compra, excluo a chave
+    if cpf in compras and not compras[cpf]:
+        del compras[cpf]
 
     # Salva dicionário atualizado no arquivo
     salvar_passagem_comprada(compras)
