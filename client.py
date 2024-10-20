@@ -17,6 +17,8 @@ server_name_atual = None
 
 def start_client():
     while True:
+        clear_terminal()
+
         escolha2 = escolhe_servidor()
 
         if escolha2 == '0':
@@ -28,21 +30,23 @@ def start_client():
         server_url_atual = SERVERS_URLS[int(escolha2) - 1]
         server_name_atual = nomes_servidores[int(escolha2) - 1]
 
+        sair = 0
+        menu = 0
+
         while True:
             # Escolhe entre comprar uma passagem, ver passagens compradas em um CPF ou sair do programa
             escolha = mostrar_menu_principal(server_name_atual)
 
             if escolha == '0' or escolha == '3':
-                clear_terminal()
                 break
 
             sair = 0
             menu = 0
+
+            clear_terminal()
             
             # Se escolheu comprar uma passagem
             if escolha == '1':
-                # Caso cliente não consiga se conectar, enviar ou receber dados ao servidor, 
-                # ele escolhe origem e destino de novo e tenta conectar e enviar ou receber os dados novamente
                 while True:
                     origem, destino = selecionar_cidades(cidades)
                     
@@ -53,8 +57,6 @@ def start_client():
 
                     # Volta pro menu principal
                     if origem == "100" or destino == "100":
-                        menu = 1
-                        
                         clear_terminal()
                         break
 
@@ -67,29 +69,19 @@ def start_client():
                     }
 
                     # Solicita que server atual retorne caminhos de Origem a Destino
-                    caminhos = requests_get(server_url_atual, "/caminhos_cliente", mensagem, "caminhos_encontrados", server_name_atual)
+                    caminhos = requests_get(server_url_atual, "/caminhos_cliente", mensagem, "caminhos_encontrados", server_name_atual, 15)
+                    
+                    # Se não conseguiu requisição, volta a escolha de origem e destino
                     if caminhos is None:
                         continue
-                    
-                    # Se não der merda, sai do loop
-                    break
-                
-                # Volta pro menu principal
-                if menu:
-                    continue
-                
-                # Fecha o programa
-                if sair:
-                    break
 
-                while True:
                     # Verifica se servidor achou algum caminho de origem à destino, se achou
                     # exibe caminhos e aguarda escolha do usuário entre voltar ao menu principal, sair do programa
                     # ou tentar comprar um caminho
                     if caminhos:
                         G = preenche_grafo(caminhos)
-
                         caminhos_ordenados_distancia, caminhos_ordenados_valor = encontrar_caminhos(G, origem, destino)
+
                         # Caso cliente não consiga se conectar, enviar ou receber dados do servidor, 
                         # ele escolhe caminho e cpf de novo e tenta conectar e enviar ou receber os dados novamente
                         while True:
@@ -113,8 +105,8 @@ def start_client():
                             }
 
                             # Solicita que server atual afetue compra do caminho escolhido
-                            resposta, status = requests_post(server_url_atual, "/comprar_cliente", mensagem, "resultado", server_name_atual)
-                            if resposta is None:
+                            resposta, status = requests_post(server_url_atual, "/comprar_cliente", mensagem, "resultado", server_name_atual, 25)
+                            if resposta is None and status is None:
                                 continue
                             
                             # Se não der merda, sai do loop
@@ -124,39 +116,26 @@ def start_client():
                         if sair or menu:
                             break
 
-                        # Servidor enviou status indicando que compra foi feita, volta ao menu principal automaticamente
-                        if status == 200:
-                            imprime_divisoria()
-                            print("Compra feita com sucesso!")
-                            imprime_divisoria()
-                        
-
-                        # Por enquanto ta retornando pro menu principal, mas o certo é o servidor retornar novos caminhos
-                        # e cliente escolher de novo outro caminho
-
-
-                        # Servidor enviou status indicando que o caminho escolhido não estava mais disponível
-                        elif status == 400:
-                            imprime_divisoria()
-                            print("Caminho escolhido não mais disponível!")
-                            imprime_divisoria()
+                        # Informa mensagem recebida pelo servidor
+                        imprime_divisoria()
+                        print(resposta)
+                        imprime_divisoria()
 
                         sleep_clear(5)
-                        break
                         
+                        # Se compra foi feita, volta ao menu principal
+                        if status == 200:
+                            break
+
+                        # Se caminho não tava mais disponível, volta a escolha de origem e destino
                         
-                    # Caso servidor retorne nenhum caminho, volta ao menu principal automaticamente
+                    # Caso servidor retorne nenhum caminho, volta a escolha de origem e destino
                     else:
                         imprime_divisoria()
                         print(f"Nenhum caminho disponível de {origem} para {destino}")
                         imprime_divisoria()
 
                         sleep_clear(5)
-                        break
-                
-                # Encerra aplicação
-                if sair:
-                    break
             
             # Se escolheu verificar passagens compradas em um CPF
             elif escolha == '2':
@@ -182,7 +161,7 @@ def start_client():
                     }
 
                     # Solicita que server atual retorne passagens compradas pelo cliente (cpf)
-                    passagens = requests_get(server_url_atual, "/passagens_cliente", mensagem, "passagens_encontradas", server_name_atual)
+                    passagens = requests_get(server_url_atual, "/passagens_cliente", mensagem, "passagens_encontradas", server_name_atual, 15)
                     if passagens is None:
                         continue
                     
@@ -206,8 +185,6 @@ def start_client():
                     if escolha == '0':
                         break
 
-                    clear_terminal()
-
                 # Se servidor não encontrou passagens compradas no CPF, volta ao menu principal automaticamente
                 else:
                     imprime_divisoria()
@@ -215,10 +192,15 @@ def start_client():
                     imprime_divisoria()
 
                     sleep_clear(5)
+            
+            # Encerra aplicação
+            if sair:
+                break
         
-        if escolha == '0':
+        if escolha == '0' or sair:
             break
 
+    clear_terminal()
     imprime_divisoria()
     print("Até a próxima!")
     imprime_divisoria()
