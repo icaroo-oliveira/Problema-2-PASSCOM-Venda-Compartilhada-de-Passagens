@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import threading
 
-from utils_server_a import *
+from utils_server_c import *
 from connection import *
 
 app = Flask(__name__)
@@ -40,7 +40,7 @@ def handle_caminhos_cliente():
     # Cria threads para solicitar caminhos dos servidores A e B
     threads = []
     for i, servidor in enumerate([SERVER_URL_A, SERVER_URL_B]):
-        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "caminhos_encontrados", nomes_servidores[i], resultados, "/caminhos_servidor"))
+        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "caminhos_encontrados", nomes_servidores[i], resultados, "/caminhos_servidor", 10))
         threads.append(thread)
         thread.start()
 
@@ -99,7 +99,7 @@ def handle_passagens_compradas_cliente():
     # Cria threads para solicitar passagens dos servidores A e B
     threads = []
     for i, servidor in enumerate([SERVER_URL_A, SERVER_URL_B]):
-        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "passagens_encontradas", nomes_servidores[i], resultados, "/passagens_servidor"))
+        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "passagens_encontradas", nomes_servidores[i], resultados, "/passagens_servidor", 10))
         threads.append(thread)
         thread.start()
 
@@ -158,29 +158,33 @@ def handle_comprar_cliente():
             
             # Se servidor C não tem mais o trecho, retorna ao cliente que deu merda
             else:
-                return jsonify({"resultado": "Caminho indisponível"}), 400
+                return jsonify({"resultado": "Caminho indisponível"}), 300
 
-    # Se server C não tem caminho ou se server C tem caminho e está tudo disponível, verifica com
+    # Se não tem trechos a enviar nem pro server B e nem pro A, retorna compra realizada (só comprou no C)
+    if not trechos_server_b and not trechos_server_a:
+        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+
+    # Se server C não tem caminho; server C tem caminho, está tudo disponível e server B e/ou A tem caminho; verifica com
     # os outros servidores
 
     mensagem = {
         "caminho": caminho,
         "cpf": cpf
     }
-    
+     
     # Dicionário para armazenar os resultados das requisições (compra feita ou não pelo outros servidores)
     respostas = {}
 
-    # Cria threads para solicitar caminhos dos servidores A e B
+    # Cria threads para solicitar caminhos dos servidores B e A
     threads = []
 
-    if trechos_server_a:
-        thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_A, mensagem, "resultado", "A", respostas, "/comprar_servidor"))
+    if trechos_server_b:
+        thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_B, mensagem, "resultado", "B", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()
 
-    if trechos_server_b:
-        thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_B, mensagem, "resultado", "B", respostas, "/comprar_servidor"))
+    if trechos_server_a:
+        thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_A, mensagem, "resultado", "A", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()
 
@@ -188,18 +192,98 @@ def handle_comprar_cliente():
     for thread in threads:
         thread.join()
 
-    # Pega resposta das threads
-    if "A" in respostas:
-        resposta_a, status_a = respostas["A"]
-    
-    if "B" in respostas:
-        resposta_b, status_b = respostas["B"]
+    # Retorna as respostas dos servidores (se tinha trechos A ENVIAR) ou retorna -1 (não tinha trechos A ENVIAR)
+    # ps: só vai ser -1 se nem criou threads pra enviar ao servidor (nem tinha oq enviar)
+    resposta_b, status_b = respostas.get("B", (-1, -1))
+    resposta_a, status_a = respostas.get("A", (-1, -1))
+
+    # Caso 1: Somente um dos 2 servidores tinha trechos a serem verificados e comprados
+
+    # Se somente servidor A tinha trechos pra verificar e comprar
+    if status_b == -1 and status_a != -1:
+        # Se servidor A conseguiu comprar de boa
+        if status_a == 200:
+            print(resposta_a)
+            return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+        # Se servidor A não tinha mais os trechos ou não respondeu
+        else:
+            # Se não tinha mais os trechos
+            if status_a == 300:
+                print(resposta_a)
+            # Se server C registou a compra, desfaz
+            if trechos_server_c:
+                with file_lock:
+                    desregistra_trechos_escolhidos(trechos_server_c, cpf)
+            
+            return jsonify({"resultado": "Caminho indisponível"}), 300
+
+    # Se somente servidor B tinha trechos pra verificar e comprar
+    if status_a == -1 and status_b != -1:
+        # Se servidor B conseguiu comprar de boa
+        if status_b == 200:
+            print(resposta_b)
+            return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+        # Se servidor B não tinha mais os trechos ou não respondeu
+        else:
+            # Se não tinha mais os trechos
+            if status_b == 300:
+                print(resposta_b)
+            # Se server C registou a compra, desfaz
+            if trechos_server_c:
+                with file_lock:
+                    desregistra_trechos_escolhidos(trechos_server_c, cpf)
+            
+            return jsonify({"resultado": "Caminho indisponível"}), 300
+
+    # Caso 2: Ambos os servidores não tinham mais os trechos ou não respoderam
+    if (status_b == 300 or status_b is None) and (status_a == 300 or status_a is None):
+        if status_b == 300:
+            print(resposta_b)
         
+        if status_a == 300:
+            print(resposta_a)
 
-    # Aqui tem que verificar resposta dos servidores para ver se conseguiu comprar ou nao
+        # Se servidor C fez a compra, desfaz
+        if trechos_server_c:
+            with file_lock:
+                desregistra_trechos_escolhidos(trechos_server_c, cpf)
+            
+            # Informa ao cliente que compra deu erro
+            return jsonify({"resultado": "Caminho indisponível"}), 300
+
+    # Caso 3: Ambos os servidores tiveram sucesso
+    if status_b == 200 and status_a == 200:
+        print(resposta_b)
+        print(resposta_a)
+        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+
+    # Caso 4: Um servidor falha e o outro tem sucesso (realiza rollback no que teve sucesso)
+    # ps: Caso o servidor C tenha realizado compra, também desfaz
 
 
-    return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+    # ÍCARO, É AQUI QUE NÃO TA CONSIDERANDO QUE O ROLLBACK PODE DAR MERDA, OU SEJA, SERVER ESTAR OFF
+
+
+    # Servidor A teve sucesso e servidor B não
+    if (status_b == 300 or status_b is None) and status_a == 200:
+        if status_b == 300:
+            print(resposta_b)
+            
+        resposta_rollback = requests_delete(SERVER_URL_A, "/rollback", mensagem, "resultado", "A", 10)
+
+    # Servidor B teve sucesso e servidor A não
+    elif (status_a == 300 or status_a is None) and status_b == 200:
+        if status_a == 300:
+            print(resposta_a)
+        
+        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", mensagem, "resultado", "B", 10)
+
+    print(resposta_rollback)
+
+    if trechos_server_c:
+        with file_lock:
+            desregistra_trechos_escolhidos(trechos_server_c, cpf)
+    return jsonify({"resultado": "Caminho indisponível"}), 300
         
 # Verifica e registra compra de trechos (outro servidor pediu)
 @app.route('/comprar_servidor', methods=['POST'])
@@ -224,11 +308,32 @@ def handle_comprar_servidor():
             # REGIÃO CRITICA
             registra_trechos_escolhidos(G, trechos_server_c, cpf)
 
-            return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+            return jsonify({"resultado": "Compra realizada com sucesso no servidor C"}), 200
 
         # Por enquanto só retorna que a compra deu merda
         else:
-            return jsonify({"resultado": "Caminho indisponível"}), 400
+            return jsonify({"resultado": "Caminho indisponível no servidor C"}), 300
+
+# Ordem de rollback (desfaz compra caso outro servidor não consiga realizar sua compra)
+@app.route('/rollback', methods=['DELETE'])
+def handle_rollback():
+    # Transforma mensagem do servidor em dicionário
+    data = request.json
+    
+    # Pega caminho e cpf escolhido a desfazer a compra
+    caminho = data['caminho']
+    cpf = data['cpf']
+
+    # Separa cada trecho do caminho ao seu devido servidor
+    trechos_server_a, trechos_server_b, trechos_server_c = desempacota_caminho_cliente(caminho)
+
+    # Desfaz a compra
+    # REGIÃO CRITICA
+    with file_lock:
+        # Adiciona assento aos trechos, remove cpf dos trechos e remove compra associada ao cpf
+        desregistra_trechos_escolhidos(trechos_server_c, cpf)
+
+    return jsonify({"resultado": "Rollback realizado com sucesso no servidor C"})
 
 if __name__ == "__main__":
     # O Flask usa `run` para iniciar o servidor HTTP
