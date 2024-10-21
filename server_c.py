@@ -308,11 +308,11 @@ def handle_comprar_servidor():
             # REGIÃO CRITICA
             registra_trechos_escolhidos(G, trechos_server_c, cpf)
 
-            return jsonify({"resultado": "Compra realizada com sucesso no servidor C"}), 200
-
-        # Por enquanto só retorna que a compra deu merda
-        else:
-            return jsonify({"resultado": "Caminho indisponível no servidor C"}), 300
+    # Se não tava mais disponível algum trecho
+    if not comprar:
+        return jsonify({"resultado": "Caminho indisponível no servidor C"}), 300
+    
+    return jsonify({"resultado": "Compra realizada com sucesso no servidor C"}), 200
 
 # Ordem de rollback (desfaz compra caso outro servidor não consiga realizar sua compra)
 @app.route('/rollback', methods=['DELETE'])
