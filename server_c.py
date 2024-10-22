@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 import threading
+import random
+import time
 
 from utils_server_c import *
 from connection import *
@@ -298,15 +300,25 @@ def handle_comprar_servidor():
     # Separa cada trecho do caminho ao seu devido servidor
     trechos_server_a, trechos_server_b, trechos_server_c = desempacota_caminho_cliente(caminho)
 
-    # Verifica se seus trechos ainda tao disponíveis
-    # REGIÃO CRITICA
-    with file_lock:
-        G = carregar_grafo()
-        comprar = verifica_trechos_escolhidos(G, trechos_server_c)
+    # Quantidade de vezes que a thread vai verificar se o trecho ta disponível
+    qtd_for = random.randint(1, 5)
 
-        if comprar:
-            # REGIÃO CRITICA
-            registra_trechos_escolhidos(G, trechos_server_c, cpf)
+    for i in range(qtd_for):
+
+        # Tempo random (100ms a 300ms) para thread verificar se o trecho ta disponível novamente
+        time.sleep(times[random.randint(0, 4)])
+
+        # Verifica se seus trechos ainda tao disponíveis
+        # REGIÃO CRITICA
+        with file_lock:
+            G = carregar_grafo()
+            comprar = verifica_trechos_escolhidos(G, trechos_server_c)
+
+            # Quando trecho tiver disponível, sai do loop
+            if comprar:
+                # REGIÃO CRITICA
+                registra_trechos_escolhidos(G, trechos_server_c, cpf)
+                break
 
     # Se não tava mais disponível algum trecho
     if not comprar:
