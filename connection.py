@@ -1,5 +1,8 @@
 import requests
 
+# Tempos random para verificação novamente de trechos disponíveis
+times = [0.1, 0.15, 0.2, 0.25, 0.3]
+
 # Requisições do tipo get
 def requests_get(server_url, requisicao, mensagem, chave_dicionario, nome_servidor, timeout):
     try:
