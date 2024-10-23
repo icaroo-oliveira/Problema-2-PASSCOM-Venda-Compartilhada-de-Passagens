@@ -8,7 +8,7 @@ ARQUIVO_PASSAGENS_COMPRADAS = 'passagens_C.json'
 # Constante que determina valor de 100km do servidor
 VALOR_100_KM = 155
 
-nomes_servidores = ["A", "B", "C"]
+nomes_servidores = ("A", "B", "C")
 
 # Função para calcular valor de um trecho
 # Parâmetros ->     km: quilometragem total de um trecho

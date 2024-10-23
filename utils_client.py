@@ -4,10 +4,10 @@ import time
 import heapq
 import networkx as nx
 
-cidades = ["Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
-            "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre"]
+cidades = ("Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
+            "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre")
 
-nomes_servidores = ["A", "B", "C"]
+nomes_servidores = ("A", "B", "C")
 
 # Constante que determina valor de 100km do servidor A
 VALOR_100_KM_A = 115
@@ -228,7 +228,7 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
 # Se o trecho tiver sido retornado por mais de um servidor, prioriza A -> B -> C, por ser mais barato
 def verifica_servidor_prioridade(lista_servers):
     # Preço, respectivamente, de cada servidor por 100km
-    valor_servidor = [VALOR_100_KM_A, VALOR_100_KM_B, VALOR_100_KM_C]
+    valor_servidor = (VALOR_100_KM_A, VALOR_100_KM_B, VALOR_100_KM_C)
 
     # Verifica qual servidor retornou determinado trecho dando preferência ao A -> B -> C
     for servidor_prioridade in nomes_servidores:
