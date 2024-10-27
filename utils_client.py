@@ -13,7 +13,7 @@ VALOR_100_KM_B = 125
 # Constante que determina valor de 100km do servidor B
 VALOR_100_KM_C = 135
 
-# Preço, respectivamente, de cada servidor por 100km
+# Preço de cada servidor por 100km
 VALOR_SERVIDOR = {"A": VALOR_100_KM_A, "B": VALOR_100_KM_B, "C": VALOR_100_KM_C}
 
 # Função para calcular valor de um trecho, a depender do servidor
@@ -122,11 +122,10 @@ def preenche_grafo(lista):
 
 # 1° Caminhos mais curtos
 # Caso um trecho tenha sido retornado por mais de um servidor, prefência será do servidor atualmente conectado pelo cliente.
-# Se tal servidor não encontrou o trecho, preferência será A -> B -> C, pois como a distancia será a mesma, 
-# é necessário levar em conta o trecho mais barato
+# Se tal servidor não encontrou o trecho, preferência será pelo servidor mais barato, pois a distancia é a mesma para todos
 
 # 2° Caminhos mais baratos
-# Caso um trecho tenha sido retornado por mais de um servidor, prefência será A -> B -> C, pois o km é mais barato
+# Caso um trecho tenha sido retornado por mais de um servidor, prefência será pelo servidor mais barato
 
 # ps: Retorna um tupla com 2 listas: 1 com os 5 caminhos mais curtos, 1 com os 5 caminhos mais baratos
 # ps: Cada uma das lista é uma lista de tuplas onde ,  1° item da tupla = distancia total do caminho (lista 1°) ou valor total do caminho (lista 2°)

@@ -1,5 +1,10 @@
 import requests
 
+SERVER_URL_A = "http://127.0.0.1:65433"
+SERVER_URL_B = "http://127.0.0.1:65434"
+SERVER_URL_C = "http://127.0.0.1:65435"
+#ou http://localhost:65433
+
 # Tempos random para verificação novamente de trechos disponíveis
 times = (0.1, 0.15, 0.2, 0.25, 0.3)
 

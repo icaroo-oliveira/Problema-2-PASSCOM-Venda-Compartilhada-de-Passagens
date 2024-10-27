@@ -13,9 +13,6 @@ file_lock = threading.Lock()
 HOST = '0.0.0.0'
 PORTA = 65433
 
-SERVER_URL_B = "http://127.0.0.1:65434"
-SERVER_URL_C = "http://127.0.0.1:65435"
-
 # Retorna caminhos encontrados de origem a destino (cliente pediu)
 @app.route('/caminhos_cliente', methods=['GET'])
 def handle_caminhos_cliente():

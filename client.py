@@ -2,11 +2,6 @@ from utils_client import *
 from interface import *
 from connection import *
 
-SERVER_URL_A = "http://127.0.0.1:65433"
-SERVER_URL_B = "http://127.0.0.1:65434"
-SERVER_URL_C = "http://127.0.0.1:65435"
-#ou http://localhost:65433
-
 SERVERS_URLS = (SERVER_URL_A, SERVER_URL_B, SERVER_URL_C)
 
 NOMES_SERVIDORES = ("A", "B", "C")
