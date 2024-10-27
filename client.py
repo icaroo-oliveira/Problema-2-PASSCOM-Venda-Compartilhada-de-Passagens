@@ -10,10 +10,10 @@ SERVER_URL_C = "http://127.0.0.1:65435"
 SERVERS_URLS = (SERVER_URL_A, SERVER_URL_B, SERVER_URL_C)
 
 # Guarda url do servidor escolhido do cliente
-server_url_atual = None
+servidor_conectado_url = None
 
 # Guarda nome do servidor escolhido do cliente
-server_name_atual = None
+servidor_conectado_nome = None
 
 def start_client():
     while True:
@@ -27,15 +27,15 @@ def start_client():
         clear_terminal()
 
         # Define server a se conectar a depender da resposta do cliente
-        server_url_atual = SERVERS_URLS[int(escolha2) - 1]
-        server_name_atual = nomes_servidores[int(escolha2) - 1]
+        servidor_conectado_url = SERVERS_URLS[int(escolha2) - 1]
+        servidor_conectado_nome = nomes_servidores[int(escolha2) - 1]
 
         sair = 0
         menu = 0
 
         while True:
             # Escolhe entre comprar uma passagem, ver passagens compradas em um CPF ou sair do programa
-            escolha = mostrar_menu_principal(server_name_atual)
+            escolha = mostrar_menu_principal(servidor_conectado_nome)
 
             if escolha == '0' or escolha == '3':
                 break
@@ -69,7 +69,7 @@ def start_client():
                     }
 
                     # Solicita que server atual retorne caminhos de Origem a Destino
-                    caminhos = requests_get(server_url_atual, "/caminhos_cliente", mensagem, "caminhos_encontrados", server_name_atual, 15)
+                    caminhos = requests_get(servidor_conectado_url, "/caminhos_cliente", mensagem, "caminhos_encontrados", servidor_conectado_nome, 15)
                     
                     # Se não conseguiu requisição, volta a escolha de origem e destino
                     if caminhos is None:
@@ -80,7 +80,7 @@ def start_client():
                     # ou tentar comprar um caminho
                     if caminhos:
                         G = preenche_grafo(caminhos)
-                        caminhos_ordenados_distancia, caminhos_ordenados_valor = encontrar_caminhos(G, origem, destino)
+                        caminhos_ordenados_distancia, caminhos_ordenados_valor = encontrar_caminhos(G, origem, destino, servidor_conectado_nome)
 
                         # Caso cliente não consiga se conectar, enviar ou receber dados do servidor, 
                         # ele escolhe caminho e cpf de novo e tenta conectar e enviar ou receber os dados novamente
@@ -105,7 +105,7 @@ def start_client():
                             }
 
                             # Solicita que server atual afetue compra do caminho escolhido
-                            resposta, status = requests_post(server_url_atual, "/comprar_cliente", mensagem, "resultado", server_name_atual, 25)
+                            resposta, status = requests_post(servidor_conectado_url, "/comprar_cliente", mensagem, "resultado", servidor_conectado_nome, 25)
                             if resposta is None and status is None:
                                 continue
                             
@@ -161,7 +161,7 @@ def start_client():
                     }
 
                     # Solicita que server atual retorne passagens compradas pelo cliente (cpf)
-                    passagens = requests_get(server_url_atual, "/passagens_cliente", mensagem, "passagens_encontradas", server_name_atual, 15)
+                    passagens = requests_get(servidor_conectado_url, "/passagens_cliente", mensagem, "passagens_encontradas", servidor_conectado_nome, 15)
                     if passagens is None:
                         continue
                     

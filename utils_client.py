@@ -7,8 +7,6 @@ import networkx as nx
 cidades = ("Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
             "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre")
 
-nomes_servidores = ("A", "B", "C")
-
 # Constante que determina valor de 100km do servidor A
 VALOR_100_KM_A = 115
 
@@ -17,6 +15,11 @@ VALOR_100_KM_B = 125
 
 # Constante que determina valor de 100km do servidor B
 VALOR_100_KM_C = 135
+
+# Preço, respectivamente, de cada servidor por 100km
+valor_servidor = (VALOR_100_KM_A, VALOR_100_KM_B, VALOR_100_KM_C)
+
+nomes_servidores = ("A", "B", "C")
 
 # Função para limpar terminal (reconhece qual SO utilizado)
 def clear_terminal():
@@ -141,7 +144,8 @@ def preenche_grafo(lista):
 # Critério para caso mais de um servidor tenha encontrado determinado trecho:
 
 # 1° Caminhos mais curtos
-# Caso um trecho tenha sido retornado por mais de um servidor, prefência será A -> B -> C, pois como a distancia será a mesma,
+# Caso um trecho tenha sido retornado por mais de um servidor, prefência será do servidor atualmente conectado pelo cliente.
+# Se tal servidor não encontrou o trecho, preferência será A -> B -> C, pois como a distancia será a mesma, 
 # é necessário levar em conta o trecho mais barato
 
 # 2° Caminhos mais baratos
@@ -164,7 +168,7 @@ def preenche_grafo(lista):
 #                                   (700, 567, ["A", "C", "A"], ["curitiba", "bh", "rj", "sao paulo"]),
 #                                   ... mais 1 pra fechar 3 (ou nao, se tiver menos que 3)  
 #                                ]
-def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
+def encontrar_caminhos(grafo, cidade_inicial, cidade_fim, servidor_conectado_nome):
     # Lista dos 5 caminhos mais curtos
     caminhos_distancia = []
 
@@ -175,11 +179,17 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
     for path in nx.all_simple_paths(grafo, source=cidade_inicial, target=cidade_fim):
         caminho_valido = True
 
-        # Lista que indica a qual servidor pertence o trecho retornado
-        servidores = []
+        # Lista que indica a qual servidor pertence o trecho retornado (lista a depender do valor)
+        servidores_valor = []
 
-        # Variável que irá guardar o valor total de um caminho
-        valor_caminho = 0
+        # Lista que indica a qual servidor pertence o trecho retornado (lista a depender da distancia)
+        servidores_distancia = []
+
+        # Variável que irá guardar o valor total de um caminho (lista a depender do valor)
+        valor_caminho_valor = 0
+
+        # Variável que irá guardar o valor total de um caminho (lista a depender da distancia)
+        valor_caminho_distancia = 0
 
         # Variável que irá guardar a distancia total de um caminho
         dist_caminho = 0
@@ -196,27 +206,36 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
                 caminho_valido = False
                 break
             
-            # Servidor prioridade e o valor do seu km
-            server_prioridade, valor_servidor = verifica_servidor_prioridade(lista_servers)
+            # Servidor prioridade da lista a depender do valor e o valor desse servidor
+            server_prioridade_valor, valor_servidor_valor = verifica_servidor_prioridade(lista_servers, servidor_conectado_nome, False)
 
-            # Informo a qual servidor esse trecho pertence
-            servidores.append(server_prioridade)
+            # Servidor prioridade da lista a depender da distancia e o valor desse servidor
+            server_prioridade_distancia, valor_servidor_distancia = verifica_servidor_prioridade(lista_servers, servidor_conectado_nome, True)
+
+            # Informo a qual servidor esse trecho pertence (lista a depender do valor)
+            servidores_valor.append(server_prioridade_valor)
+
+            # Informo a qual servidor esse trecho pertence (lista a depender da distancia)
+            servidores_distancia.append(server_prioridade_distancia)
 
             # Pego a distancia dessse trecho
             dist_trecho = grafo[trecho[0]][trecho[1]]['distancia']
 
-            # Somo valor desse trecho ao valor total do caminho
-            valor_caminho += valor_trecho(dist_trecho, valor_servidor)
+            # Somo valor desse trecho ao valor total do caminho (lista a depender do valor)
+            valor_caminho_valor += valor_trecho(dist_trecho, valor_servidor_valor)
+
+            # Somo valor desse trecho ao valor total do caminho (lista a depender da distancia)
+            valor_caminho_distancia += valor_trecho(dist_trecho, valor_servidor_distancia)
 
             # Somo distancia desse trecho a distancia total do caminho
             dist_caminho += dist_trecho
 
         if caminho_valido:
             # Organiza os caminhos em fila de prioridade (menor ao maior) a depender da distancia
-            heapq.heappush(caminhos_distancia, (dist_caminho, valor_caminho, servidores, path))
+            heapq.heappush(caminhos_distancia, (dist_caminho, valor_caminho_distancia, servidores_distancia, path))
 
             # Organiza os caminhos em fila de prioridade (menor ao maior) a depender do valor
-            heapq.heappush(caminhos_valor, (valor_caminho, dist_caminho, servidores, path))
+            heapq.heappush(caminhos_valor, (valor_caminho_valor, dist_caminho, servidores_valor, path))
 
     # Obtém os 5 melhores caminhos (se existirem)
     caminhos_ordenados_distancia = heapq.nsmallest(5, caminhos_distancia)
@@ -225,10 +244,12 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim):
     
     return caminhos_ordenados_distancia, caminhos_ordenados_valor
 
-# Se o trecho tiver sido retornado por mais de um servidor, prioriza A -> B -> C, por ser mais barato
-def verifica_servidor_prioridade(lista_servers):
-    # Preço, respectivamente, de cada servidor por 100km
-    valor_servidor = (VALOR_100_KM_A, VALOR_100_KM_B, VALOR_100_KM_C)
+# Se flag for True (lista a depender da distancia), primeiro verifica se o servidor conectado 
+# pelo cliente retornou tal trecho, se não retornou ou se flag for False, volta a prioridade A -> B -> C
+def verifica_servidor_prioridade(lista_servers, servidor_conectado_nome, flag):
+    if flag:
+        if servidor_conectado_nome in lista_servers:
+            return servidor_conectado_nome, valor_servidor[nomes_servidores.index(servidor_conectado_nome)]
 
     # Verifica qual servidor retornou determinado trecho dando preferência ao A -> B -> C
     for servidor_prioridade in nomes_servidores:
