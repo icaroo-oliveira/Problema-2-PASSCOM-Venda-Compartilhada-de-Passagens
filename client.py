@@ -2,20 +2,23 @@ from utils_client import *
 from interface import *
 from connection import *
 
+# Tupla que guarda url dos servidores
 SERVERS_URLS = (SERVER_URL_A, SERVER_URL_B, SERVER_URL_C)
 
+# Tupla que guarda nome dos servidores
 NOMES_SERVIDORES = ("A", "B", "C")
 
-# Guarda url do servidor escolhido do cliente
+# Guarda url do servidor escolhido pelo cliente
 servidor_conectado_url = None
 
-# Guarda nome do servidor escolhido do cliente
+# Guarda nome do servidor escolhido pelo cliente
 servidor_conectado_nome = None
 
 def start_client():
     while True:
         clear_terminal()
-
+        
+        # Escolhe servidor a se conectar
         escolha2 = escolhe_servidor()
 
         if escolha2 == '0':
@@ -45,6 +48,8 @@ def start_client():
             # Se escolheu comprar uma passagem
             if escolha == '1':
                 while True:
+
+                    # Escolhe cidade origem e destino
                     origem, destino = selecionar_cidades(CIDADES)
                     
                     # Encerra aplicação
@@ -76,7 +81,10 @@ def start_client():
                     # exibe caminhos e aguarda escolha do usuário entre voltar ao menu principal, sair do programa
                     # ou tentar comprar um caminho
                     if caminhos:
+                        # Alimenta grafo do cliente
                         G = preenche_grafo(caminhos)
+
+                        # Retorna 5 caminhos mais curtos e 5 caminhos mais baratos
                         caminhos_ordenados_distancia, caminhos_ordenados_valor = encontrar_caminhos(G, origem, destino, servidor_conectado_nome)
 
                         # Caso cliente não consiga se conectar, enviar ou receber dados do servidor, 
@@ -139,6 +147,7 @@ def start_client():
                 # Caso cliente não consiga se conectar, enviar ou receber dados do servidor, 
                 # ele escolhe cpf de novo e tenta conectar e enviar ou receber os dados novamente
                 while True:
+                    # Retorna cpf escolhido
                     cpf = verificar_passagens_compradas()
                     
                     # Encerra aplicação
@@ -173,7 +182,6 @@ def start_client():
                 if sair:
                     break
             
-                # Lista de dicionários. Cada dicionário = Uma compra de determinado CPF
                 # Se servidor encontrou passagens compradas no CPF, 
                 # exibe e aguarda escolha do usuário entre voltar ao menu principal ou sair do programa
                 if passagens:

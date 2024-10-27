@@ -1,6 +1,7 @@
 import heapq
 import networkx as nx
 
+# Cidades disponíveis no sistema
 CIDADES = ("Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
             "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre")
 
@@ -24,8 +25,12 @@ def valor_trecho(dist_trecho, valor_servidor):
     total = (dist_trecho / 100) * valor_servidor
     return round(total, 2)
 
-# Assim que o cliente abrir a aplicação, esse grafo temporário é criado para receber a lista com os caminhos encontrados
-# pelos servidores
+# Função para iniciar grafo temporário do cliente
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        G: grafo temporário do cliente
+
+# Assim que o cliente abrir a aplicação, esse grafo temporário é criado para receber 
+# a lista com os caminhos encontrados pelos servidores
 # O campo "servidores" de cada trecho, é uma lista que vai guardar qual servidor achou caminho com o atual trecho
 # Logo essa lista pode ter até 3 itens: "A", "B" e "C"
 # Primordialmente ela é vazia pois servidor ainda não retornou nenhum caminho, obvio
@@ -85,6 +90,10 @@ def inicia_grafo():
 
     return G
 
+# Função para preencher grafo temporário do cliente com os caminhos encontrados pelos servidores
+# Parâmetros ->     lista: contém caminhos encontrados pelos servidores
+# Retorno ->        G: grafo temporário do cliente (já preenchido)
+
 # Quando cliente receber a lista com os caminhos encontrados pelo servidores, ele vai alimentar o grafo temporário
 # Exemplo: [
 #               [ "A", ["curitiba", "bh", "rj", "sao paulo"], ["curitiba", "cuiabá", "sao paulo"] ],
@@ -116,6 +125,14 @@ def preenche_grafo(lista):
     
     return G
 
+# Função para encontrar os 5 caminhos mais curtos e 5 caminhos mais baratos
+# Parâmetros ->     grafo: grafo temporário do cliente
+#                   cidade_inicial: cidade origem
+#                   cidade_fim: cidade destino
+#                   servidor_conectado_nome: nome do servidor conectado pelo cliente (determina prioridade)
+# Retorno ->        caminhos_ordenados_distancia: lista com 5 caminhos mais curtos
+#                   caminhos_ordenados_valor: lista com 5 caminhos mais baratos
+
 # Com o grafo já alimentado, cliente vai encontrar os 5 caminhos mais curtos e os 5 caminhos mais baratos
 # Como grafo contém trecho de servidor A, B e C, os caminhos encontrados vão ter trechos de servidores misturados
 # Critério para caso mais de um servidor tenha encontrado determinado trecho:
@@ -127,7 +144,7 @@ def preenche_grafo(lista):
 # 2° Caminhos mais baratos
 # Caso um trecho tenha sido retornado por mais de um servidor, prefência será pelo servidor mais barato
 
-# ps: Retorna um tupla com 2 listas: 1 com os 5 caminhos mais curtos, 1 com os 5 caminhos mais baratos
+# ps: Retorna uma tupla com 2 listas: 1 com os 5 caminhos mais curtos, 1 com os 5 caminhos mais baratos
 # ps: Cada uma das lista é uma lista de tuplas onde ,  1° item da tupla = distancia total do caminho (lista 1°) ou valor total do caminho (lista 2°)
 #                                                      2° item da tupla = distancia total do caminho (lista 1°) ou valor total do caminho (lista 2°)
 #                                                      3° item da tupla = lista com os servidores de cada trecho
@@ -219,6 +236,13 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim, servidor_conectado_nom
     caminhos_ordenados_valor = heapq.nsmallest(5, caminhos_valor)
     
     return caminhos_ordenados_distancia, caminhos_ordenados_valor
+
+# Função para verificar prioridade de um servidor sobre um trecho
+# Parâmetros ->     lista_servers: lista com servidores que retornaram trecho em questão
+#                   servidor_conectado_nome: nome do servidor conectado pelo cliente (determina prioridade)
+#                   flag: indica se servidor conectado pelo cliente deve ter prioridade
+# Retorno ->        servidor_prioridade: nome do servidor com prioridade sobre o trecho
+#                   VALOR_SERVIDOR: valor do km do servidor prioritário
 
 # Se flag for True (lista a depender da distancia), primeiro verifica se o servidor conectado 
 # pelo cliente retornou tal trecho, se não retornou ou se flag for False, volta a prioridade de servidor mais barato

@@ -3,6 +3,8 @@ import os
 import platform
 
 # Função para limpar terminal (reconhece qual SO utilizado)
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        Sem retorno
 def clear_terminal():
     if platform.system() == 'Windows':
         os.system('cls')
@@ -17,9 +19,14 @@ def sleep_clear(segundos):
     clear_terminal()
 
 # Função para melhorar frontend
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        Sem retorno
 def imprime_divisoria():
     print("\n" + "=" * 120 + "\n")
 
+# Função que exibe em tela servidores disponíveis para se conectar
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        escolha: escolha do cliente
 def escolhe_servidor():
     imprime_divisoria()
     
@@ -32,6 +39,8 @@ def escolhe_servidor():
     return escolha
 
 # Função que exibe em tela menu principal e suas opções
+# Parâmetros ->     nome_servidor: nome do servidor escolhio pelo cliente
+# Retorno ->        escolha: escolha do cliente
 def mostrar_menu_principal(nome_servidor):
     imprime_divisoria()
     print(f"\t\t\t\tSistema de Vendas de Passagens - Servidor {nome_servidor}")
@@ -74,11 +83,11 @@ def selecionar_cidades(cidades):
     return origem, destino
 
 # Função que exibe em tela caminhos encontrados de origem a destino
-# Parâmetros ->     cidades: lista de cidades disponíneis no sistema
-#                   origem: cidade origem escolhida pelo cliente
+# Parâmetros ->     origem: cidade origem escolhida pelo cliente
 #                   destino: cidade destino escolhida pelo cliente
-#                   caminhos: lista de caminhos encontrados retornados pelo servidor
-# Retorno ->        escolha: entrada do cliente do caminho escolhido
+#                   caminhos_ordenados_distancia: lista de caminhos encontrados (a depender da distancia)
+#                   caminhos_ordenados_valor: lista de caminhos encontrados retornados pelo servidor (a depender do valor)
+# Retorno ->        path: caminho escolhido pelo cliente
 #                   cpf: cpf do cliente
 def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_ordenados_valor):
     imprime_divisoria()
@@ -125,10 +134,11 @@ def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_o
     # Retorno ao servidor apenas os trechos e a quem pertence cada trecho
     path = (caminho[2], caminho[3])
     
-    # Retorna caminho escolhido e cpf
     return path, cpf
 
 # Função que exibe em tela menu de escolha de cpf para ter acesso as passagens compradas
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        cpf: cpf enviado pelo cliente
 def verificar_passagens_compradas():
     imprime_divisoria()
     print("0- Encerrar programa\n100- Menu\n")
@@ -143,10 +153,10 @@ def verificar_passagens_compradas():
 
 # Função que exibe em tela compras de passagens encontradas de um CPF
 # Parâmetros ->     cpf: cpf do cliente
-#                   passagens: lista de compras de passagens de um cliente
+#                   passagens: lista de passagens de um cliente
 # Retorno ->        escolha: entrada do cliente entre menu principal (100) ou encerrar programa (0)
 
-# Recebe essa estrutura
+# Recebe essa estrutura, exemplo
 #    [
 #       [ 
 #           "A",

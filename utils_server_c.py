@@ -8,7 +8,8 @@ ARQUIVO_PASSAGENS_COMPRADAS = 'passagens_C.json'
 # Constante que determina valor de 100km do servidor
 VALOR_100_KM = 155
 
-nomes_servidores = ("A", "B", "C")
+# Tupla que guarda nome dos servidores
+NOMES_SERVIDORES = ("A", "B", "C")
 
 # Função para calcular valor de um trecho
 # Parâmetros ->     km: quilometragem total de um trecho
@@ -18,6 +19,8 @@ def valor_trecho(km):
     return round(total, 2)
 
 # Função para quando abrir servidor, carregar ou criar o grafo
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        Sem retorno
 def cria_arquivo_grafo():
     # Carregando o grafo a partir do arquivo JSON
     try:
@@ -95,6 +98,8 @@ def cria_arquivo_grafo():
         salvar_grafo(G)
 
 # Função que carrega o grafo do arquivo
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        grafo: grafo recuperado do arquivo
 def carregar_grafo():
     # Abre arquivo e retorna os dados do grafo
     with open(ARQUIVO_GRAFO, 'r') as arq:
@@ -115,6 +120,8 @@ def carregar_grafo():
     return grafo
 
 # Função que carrega todas as passagens compradas no sistema
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        dicionário com passagens ou vazio
 def carregar_passagens_compradas():
     try:
         with open(ARQUIVO_PASSAGENS_COMPRADAS, 'r') as arq:
@@ -154,10 +161,9 @@ def salvar_passagem_comprada(dicionario_att):
         json.dump(dicionario_att, arq, indent=4)
 
 # Função que encontra 10 caminhos entre origem e destino, e retorna ordenado considerando distancia total (menor ao maior)
-# Parâmetros ->     grafo: grafo dos trechos
-#                   cidade_inicial: cidade origem para encontrar caminhos
+# Parâmetros ->     cidade_inicial: cidade origem para encontrar caminhos
 #                   cidade_fim: cidade destino para encontrar caminhos
-# Retorno ->        caminhos: lista de caminhos encontrados
+# Retorno ->        caminhos_ordenados: lista de caminhos encontrados
 
 # ps: Retorna uma lista de caminhos,  onde lista[0] = Servidor que ta retornando esses caminhos, lista[1 e etc] = caminhos
 # ex:  [
@@ -226,7 +232,7 @@ def verifica_compras_cpf(cpf):
         return []
 
 # Função para verificar se os trechos escolhidos pelo cliente ainda estão disponível (compara com o arquivo atual)
-# Parâmetros ->     G: grafo dos trechos atualizado do sistema
+# Parâmetros ->     G: grafo dos trechos atualizados do sistema
 #                   trechos: trechos escolhidos pelo cliente
 # Retorno ->        comprar: flag que indica se o caminho ainda está disponível (True) ou não (False)
 
@@ -244,7 +250,7 @@ def verifica_trechos_escolhidos(G, trechos):
 
 # Função para registrar compra de trechos (atualiza grafo, salva compra de passagem e atualiza os arquivos)
 # Parâmetros ->     G: grafo com trechos do sistema
-#                   caminho: trechos escolhidos pelo cliente
+#                   trechos: trechos escolhidos pelo cliente
 #                   cpf: cpf do cliente que está comprando o trecho
 # Retorno ->        Sem retorno
 
@@ -268,9 +274,9 @@ def registra_trechos_escolhidos(G, trechos, cpf):
     registra_compra(G, cpf, trechos, assentos)
 
 # Função para registrar nova compra de passagem em um CPF (salva em arquivo)
-# Parâmetros ->     cpf: cpf do cliente que está comprando uma passagem
+# Parâmetros ->     G: grafo com os trechos do sistema
+#                   cpf: cpf do cliente que está comprando uma passagem
 #                   trechos: lista contendo tuplas onde cada tupla contém par de cidade (trecho)
-#                   distancia: numero em km da distancia total do caminho (soma dos trechos)
 #                   assentos: lista contendo numeração dos assentos em cada trecho que forma o caminho
 # Retorno ->        Sem retorno
 
@@ -313,7 +319,10 @@ def registra_compra(G, cpf, trechos, assentos):
     # Salva dicionário atualizado no arquivo
     salvar_passagem_comprada(compras)
 
-# ROLLBACK
+# Função para desfazer uma compra (ROLLBACK), acrescenta assento e remove cpf do trecho
+# Parâmetros ->     trechos: lista contendo tuplas onde cada tupla contém par de cidade (trecho)
+#                   cpf: cpf do cliente a desfazer a compra
+# Retorno ->        Sem retorno
 def desregistra_trechos_escolhidos(trechos, cpf):
     G = carregar_grafo()
     
@@ -332,7 +341,9 @@ def desregistra_trechos_escolhidos(trechos, cpf):
     # Atualiza dicionário com nova passagem comprada e salva em arquivo
     desregistra_compra(cpf)
 
-# ROLLBACK
+# Função para desfazer uma compra (ROLLBACK), remove passagem comprada
+# Parâmetros ->     cpf: cpf do cliente a desfazer a compra
+# Retorno ->        Sem retorno
 def desregistra_compra(cpf):
     # Carrega todas as compras do sistema
     compras = carregar_passagens_compradas()
@@ -348,8 +359,11 @@ def desregistra_compra(cpf):
     # Salva dicionário atualizado no arquivo
     salvar_passagem_comprada(compras)
 
-# Recebe a escolha do caminho do cliente e separa a qual servidor pertence cada trecho
-# Estrututa da tupla recebida: tupla[0] = lista contendo servidor a qual cada trecho pertence; tupla[1] = trechos (forma caminho)
+# Função para separar cada trecho ao seu devido servidor
+# Parâmetros ->     tupla: caminho escolhido pelo cliente
+# Retorno ->        servidores: listas contendo trechos de cada servidor
+
+# Estrututa da tupla recebida: tupla[0] = lista contendo servidor a qual cada trecho pertence; tupla[1] = trechos (forma caminho). Ex:
 # (
 #   ["B", "A"], ["curitiba", "cuiabá", "sao paulo"]
 # )
@@ -376,30 +390,36 @@ def desempacota_caminho_cliente(tupla):
         
     return servidores["A"], servidores["B"], servidores["C"]
 
-# Verifica qual servidor encontrou caminho e adiciona numa lista
-# ps: Printa qual servidor encontrou ou não
+# Função para verificar qual servidor encontrou caminho e adicionar numa lista geral a enviar para o cliente
+# Parâmetros ->     caminhos_a: lista retornada pelo servidor A
+#                   caminhos_b: lista retornada pelo servidor B
+#                   caminhos_c: lista retornada pelo servidor C
+# Retorno ->        caminhos_servidores: lista geral contendo listas com caminhos encontrados pelos servidores
 def servidor_encontrou_caminho(caminhos_a, caminhos_b, caminhos_c):
     caminhos_servidores = []
     
     for i, caminho in enumerate([caminhos_a, caminhos_b, caminhos_c]):
         if caminho:
-            print(f"Servidor {nomes_servidores[i]} encontrou caminho.")
+            print(f"Servidor {NOMES_SERVIDORES[i]} encontrou caminho.")
             caminhos_servidores.append(caminho)
         else:
-            print(f"Servidor {nomes_servidores[i]} não encontrou caminho.")
+            print(f"Servidor {NOMES_SERVIDORES[i]} não encontrou caminho.")
     
     return caminhos_servidores
 
-# Verifica qual servidor encontrou passagens e adiciona numa lista
-# ps: Printa qual servidor encontrou ou não
+# Função para verificar qual servidor encontrou passagem e adicionar numa lista geral a enviar para o cliente
+# Parâmetros ->     passagens_a: lista retornada pelo servidor A
+#                   passagens_b: lista retornada pelo servidor B
+#                   passagens_c: lista retornada pelo servidor C
+# Retorno ->        passagens_servidores: lista geral contendo listas com passagens encontrados pelos servidores
 def servidor_encontrou_passagem(passagens_a, passagens_b, passagens_c):
     passagens_servidores = []
     
     for i, passagem in enumerate([passagens_a, passagens_b, passagens_c]):
         if passagem:
-            print(f"Servidor {nomes_servidores[i]} encontrou passagem.")
+            print(f"Servidor {NOMES_SERVIDORES[i]} encontrou passagem.")
             passagens_servidores.append(passagem)
         else:
-            print(f"Servidor {nomes_servidores[i]} não encontrou passagem.")
+            print(f"Servidor {NOMES_SERVIDORES[i]} não encontrou passagem.")
     
     return passagens_servidores

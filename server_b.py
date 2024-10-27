@@ -7,7 +7,8 @@ from utils_server_b import *
 from connection import *
 
 app = Flask(__name__)
- 
+
+# Lock para a região crítica (acesso a arquivos e afins)
 file_lock = threading.Lock()
 
 HOST = '0.0.0.0'
@@ -40,7 +41,7 @@ def handle_caminhos_cliente():
     threads = []
     i = 0
     for servidor in [SERVER_URL_A, SERVER_URL_C]:
-        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "caminhos_encontrados", nomes_servidores[i], resultados, "/caminhos_servidor", 10))
+        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "caminhos_encontrados", NOMES_SERVIDORES[i], resultados, "/caminhos_servidor", 10))
         threads.append(thread)
         thread.start()
         i+=2
@@ -101,7 +102,7 @@ def handle_passagens_compradas_cliente():
     threads = []
     i = 0
     for servidor in [SERVER_URL_A, SERVER_URL_C]:
-        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "passagens_encontradas", nomes_servidores[i], resultados, "/passagens_servidor", 10))
+        thread = threading.Thread(target=solicitar_caminhos_ou_passagens, args=(servidor, mensagem, "passagens_encontradas", NOMES_SERVIDORES[i], resultados, "/passagens_servidor", 10))
         threads.append(thread)
         thread.start()
         i+=2
@@ -304,7 +305,6 @@ def handle_comprar_servidor():
     qtd_for = random.randint(1, 5)
 
     for i in range(qtd_for):
-
         # Tempo random (100ms a 300ms) para thread verificar se o trecho ta disponível novamente
         time.sleep(times[random.randint(0, 4)])
 
