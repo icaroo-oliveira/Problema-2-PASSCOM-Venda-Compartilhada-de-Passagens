@@ -1,10 +1,7 @@
-import os
-import platform
-import time
 import heapq
 import networkx as nx
 
-cidades = ("Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
+CIDADES = ("Cuiabá", "Goiânia", "Campo Grande", "Belo Horizonte", "Vitória", 
             "São Paulo", "Rio de Janeiro", "Curitiba", "Florianópolis", "Porto Alegre")
 
 # Constante que determina valor de 100km do servidor A
@@ -17,16 +14,7 @@ VALOR_100_KM_B = 125
 VALOR_100_KM_C = 135
 
 # Preço, respectivamente, de cada servidor por 100km
-valor_servidor = (VALOR_100_KM_A, VALOR_100_KM_B, VALOR_100_KM_C)
-
-nomes_servidores = ("A", "B", "C")
-
-# Função para limpar terminal (reconhece qual SO utilizado)
-def clear_terminal():
-    if platform.system() == 'Windows':
-        os.system('cls')
-    else:
-        os.system('clear')
+VALOR_SERVIDOR = {"A": VALOR_100_KM_A, "B": VALOR_100_KM_B, "C": VALOR_100_KM_C}
 
 # Função para calcular valor de um trecho, a depender do servidor
 # Parâmetros ->     dist_trecho: quilometragem total de um trecho
@@ -35,17 +23,6 @@ def clear_terminal():
 def valor_trecho(dist_trecho, valor_servidor):
     total = (dist_trecho / 100) * valor_servidor
     return round(total, 2)
-
-# Função para melhorar frontend
-def imprime_divisoria():
-    print("\n" + "=" * 120 + "\n")
-
-# Função para limpar terminal após n segundos
-# Parâmetros ->     segundos: segundos que o programa deve congelar
-# Retorno ->        Sem retorno
-def sleep_clear(segundos):
-    time.sleep(segundos)
-    clear_terminal()
 
 # Assim que o cliente abrir a aplicação, esse grafo temporário é criado para receber a lista com os caminhos encontrados
 # pelos servidores
@@ -245,15 +222,18 @@ def encontrar_caminhos(grafo, cidade_inicial, cidade_fim, servidor_conectado_nom
     return caminhos_ordenados_distancia, caminhos_ordenados_valor
 
 # Se flag for True (lista a depender da distancia), primeiro verifica se o servidor conectado 
-# pelo cliente retornou tal trecho, se não retornou ou se flag for False, volta a prioridade A -> B -> C
+# pelo cliente retornou tal trecho, se não retornou ou se flag for False, volta a prioridade de servidor mais barato
 def verifica_servidor_prioridade(lista_servers, servidor_conectado_nome, flag):
     if flag:
         if servidor_conectado_nome in lista_servers:
-            return servidor_conectado_nome, valor_servidor[nomes_servidores.index(servidor_conectado_nome)]
+            return servidor_conectado_nome, VALOR_SERVIDOR[servidor_conectado_nome]
+    
+    # Ordenando o dicionário pelo menor valor (primeiro item será o servidor mais barato e por ae vai)
+    valor_servidor_ordenado = dict(sorted(VALOR_SERVIDOR.items(), key=lambda item: item[1]))
 
-    # Verifica qual servidor retornou determinado trecho dando preferência ao A -> B -> C
-    for servidor_prioridade in nomes_servidores:
+    # Verifica qual servidor retornou determinado trecho dando preferência ao mais barato
+    for servidor_prioridade in valor_servidor_ordenado:
 
         # Se o servidor estiver na lista, retorna o servidor e seu valor por km
         if servidor_prioridade in lista_servers:
-            return servidor_prioridade, valor_servidor[nomes_servidores.index(servidor_prioridade)]
+            return servidor_prioridade, VALOR_SERVIDOR[servidor_prioridade]

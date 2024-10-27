@@ -1,4 +1,24 @@
-from utils_client import *
+import time
+import os
+import platform
+
+# Função para limpar terminal (reconhece qual SO utilizado)
+def clear_terminal():
+    if platform.system() == 'Windows':
+        os.system('cls')
+    else:
+        os.system('clear')
+
+# Função para limpar terminal após n segundos
+# Parâmetros ->     segundos: segundos que o programa deve congelar
+# Retorno ->        Sem retorno
+def sleep_clear(segundos):
+    time.sleep(segundos)
+    clear_terminal()
+
+# Função para melhorar frontend
+def imprime_divisoria():
+    print("\n" + "=" * 120 + "\n")
 
 def escolhe_servidor():
     imprime_divisoria()

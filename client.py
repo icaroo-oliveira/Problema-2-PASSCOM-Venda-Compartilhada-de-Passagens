@@ -9,6 +9,8 @@ SERVER_URL_C = "http://127.0.0.1:65435"
 
 SERVERS_URLS = (SERVER_URL_A, SERVER_URL_B, SERVER_URL_C)
 
+NOMES_SERVIDORES = ("A", "B", "C")
+
 # Guarda url do servidor escolhido do cliente
 servidor_conectado_url = None
 
@@ -28,7 +30,7 @@ def start_client():
 
         # Define server a se conectar a depender da resposta do cliente
         servidor_conectado_url = SERVERS_URLS[int(escolha2) - 1]
-        servidor_conectado_nome = nomes_servidores[int(escolha2) - 1]
+        servidor_conectado_nome = NOMES_SERVIDORES[int(escolha2) - 1]
 
         sair = 0
         menu = 0
@@ -48,7 +50,7 @@ def start_client():
             # Se escolheu comprar uma passagem
             if escolha == '1':
                 while True:
-                    origem, destino = selecionar_cidades(cidades)
+                    origem, destino = selecionar_cidades(CIDADES)
                     
                     # Encerra aplicação
                     if origem == "0" or destino == "0":
@@ -60,8 +62,8 @@ def start_client():
                         clear_terminal()
                         break
 
-                    origem = cidades[int(origem) - 1]
-                    destino = cidades[int(destino) - 1]
+                    origem = CIDADES[int(origem) - 1]
+                    destino = CIDADES[int(destino) - 1]
                     
                     mensagem = {
                         "origem": origem,
