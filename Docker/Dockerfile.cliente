@@ -1,0 +1,21 @@
+#imagem python usada
+FROM python:3.12-slim
+
+#defindo o diretório de trabalho
+WORKDIR /app
+
+#copiando todos os arquivos para o diretório de trabalho
+#COPY . /app
+
+COPY Docker/requirements.txt .
+
+#instalando as dependências(requirements.txt)
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ../client.py /app
+COPY ../connection.py /app
+COPY ../utils_client.py /app
+COPY ../interface.py /app
+
+#comando para iniciar o cliente
+#CMD ["python3", "client.py"]

@@ -1,0 +1,60 @@
+version: '3'
+
+services:
+  server_a:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile.server_a # Dockerfile para o server_a
+    image: problema-1-vendepass-server-a  # Nome da imagem para server_a
+    container_name: server-a-container  # Nome do container
+    ports:
+      - "65433:65433"  # Porta do server_a
+    stdin_open: true
+    tty: true
+    command: python3 server_a.py  # Executa o server_a
+    networks:
+      - vendepass-network
+
+  server_b:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile.server_b # Dockerfile para o server_b
+    image: problema-1-vendepass-server-b  # Nome da imagem para server_b
+    container_name: server-b-container  # Nome do container
+    ports:
+      - "65434:65434"  # Porta do server_b
+    stdin_open: true
+    tty: true
+    command: python3 server_b.py  # Executa o server_b
+    networks:
+      - vendepass-network
+
+  server_c:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile.server_c # Dockerfile para o server_c
+    image: problema-1-vendepass-server-c  # Nome da imagem para server_c
+    container_name: server-c-container  # Nome do container
+    ports:
+      - "65435:65435"  # Porta do server_c
+    stdin_open: true
+    tty: true
+    command: python3 server_c.py  # Executa o server_c
+    networks:
+      - vendepass-network
+
+  client:
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile.cliente # Dockerfile para o cliente
+    image: problema-1-vendepass-client # Nome da imagem para o cliente
+    container_name: client-container  # Nome do container
+    stdin_open: true
+    tty: true
+    #command: python3 client.py  # Executa o cliente
+    networks:
+      - vendepass-network
+
+networks:
+  vendepass-network:
+    driver: bridge

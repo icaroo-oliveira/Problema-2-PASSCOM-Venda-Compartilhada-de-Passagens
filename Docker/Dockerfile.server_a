@@ -1,0 +1,24 @@
+#imagem base python
+FROM python:3.12-slim
+
+#defindo o diretório de trabalho dentro do container
+WORKDIR /app
+
+#copiando o arquivo requirements.txt para o container
+COPY Docker/requirements.txt .
+
+#instalando as dependências(requirements.txt)
+RUN pip install --no-cache-dir -r requirements.txt
+
+#copiando o código da aplicação para o container
+#COPY . /app
+
+COPY ../server_a.py /app
+COPY ../connection.py /app
+COPY ../utils_server_a.py /app
+
+
+EXPOSE 65433
+
+#definindo o comando que será executado quando o container iniciar
+#CMD ["python3", "server.py"]
