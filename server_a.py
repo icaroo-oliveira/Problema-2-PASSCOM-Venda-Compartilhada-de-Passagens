@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 import threading
 import random
 import time
-import os
 from utils_server_a import *
 from connection import *
 
@@ -14,15 +13,45 @@ file_lock = threading.Lock()
 HOST = '0.0.0.0'
 PORTA = 65433
 
+# Função que verifica se algum servidor alheio deu erro na realização de algum rollback, ou seja, tem rollback pendente
+# Essa verificação é feita a cada nova requisição recebida pelo servidor
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        Sem retorno
+def tentar_rollback_novamente():
+    with file_lock:
+        rollback_data = carregar_rollbacks_failures()
+
+        server_B = rollback_data["B"]
+        server_C = rollback_data["C"]
+
+        # Se nenhum servidor tem rollback pendente, encerra a função
+        if not server_B and not server_C:
+            return
+
+        # Se servidor B tem rollback a realizar
+        if server_B:
+            resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", server_B, "resultado", "B", 10)
+
+            # Significa que rollback foi realizado, logo posso apagar do arquivo
+            if resposta_rollback is not None:
+                rollback_data["B"] = []
+                salvar_rollbacks_failures(rollback_data)
+
+        # Se servidor C tem rollback a realizar    
+        if server_C:
+            resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", server_C, "resultado", "C", 10)
+
+            # Significa que rollback foi realizado, logo posso apagar do arquivo
+            if resposta_rollback is not None:
+                rollback_data["C"] = []
+                salvar_rollbacks_failures(rollback_data)
+
 # Retorna caminhos encontrados de origem a destino (cliente pediu)
 @app.route('/caminhos_cliente', methods=['GET'])
 def handle_caminhos_cliente():
+    tentar_rollback_novamente()
+
     # Transforma mensagem do cliente em dicionário
-
-    with file_lock:
-        tentar_rollback_novamente()
-
-
     data = request.json
 
     # Pega origem e destino
@@ -66,8 +95,8 @@ def handle_caminhos_cliente():
 # Retorna caminhos encontrados de origem a destino (outro servidor pediu)
 @app.route('/caminhos_servidor', methods=['GET'])
 def handle_caminhos_servidor():
-    with file_lock:
-        tentar_rollback_novamente()
+    tentar_rollback_novamente()
+
     # Transforma mensagem do cliente em dicionário
     data = request.json
 
@@ -85,8 +114,8 @@ def handle_caminhos_servidor():
 # Pra verificar compras de um cliente (cliente pediu)
 @app.route('/passagens_cliente', methods=['GET'])
 def handle_passagens_compradas_cliente():
-    with file_lock:
-        tentar_rollback_novamente()
+    tentar_rollback_novamente()
+
     # Transforma mensagem do cliente em dicionário
     data = request.json
     
@@ -128,8 +157,8 @@ def handle_passagens_compradas_cliente():
 # Pra verificar compras de um cliente (outro servidor pediu)
 @app.route('/passagens_servidor', methods=['GET'])
 def handle_passagens_compradas_servidor():
-    with file_lock:
-        tentar_rollback_novamente()
+    tentar_rollback_novamente()
+
     # Transforma mensagem do cliente em dicionário
     data = request.json
     
@@ -146,8 +175,7 @@ def handle_passagens_compradas_servidor():
 # Verifica e registra compra de trechos (cliente pediu)
 @app.route('/comprar_cliente', methods=['POST'])
 def handle_comprar_cliente():
-    with file_lock:
-        tentar_rollback_novamente() #sempre tenta rollback
+    tentar_rollback_novamente()
         
     # Transforma mensagem do cliente em dicionário
     data = request.json
@@ -277,45 +305,27 @@ def handle_comprar_cliente():
     # Caso 4: Um servidor falha e o outro tem sucesso (realiza rollback no que teve sucesso)
     # ps: Caso o servidor A tenha realizado compra, também desfaz
 
-
-    
-
-
-
-
-
+    rollback = [mensagem]
+        
     # Servidor C teve sucesso e servidor B não
     if (status_b == 300 or status_b is None) and status_c == 200:
         if status_b == 300:
             print(resposta_b)
         
-        # time.sleep(10) para testes
-        resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", mensagem, "resultado", "C", 10)
-
+        resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", rollback, "resultado", "C", 10)
 
         if resposta_rollback is None:
-            registrar_rollback(mensagem,SERVER_URL_C)
-        else: 
-            
+            registrar_rollback(mensagem, "C")
 
-            print(f"O rollback foi bem-sucedido: {resposta_rollback}")
-
-
-    #aqui
     # Servidor B teve sucesso e servidor C não
     elif (status_c == 300 or status_c is None) and status_b == 200:
         if status_c == 300:
             print(resposta_c)
         
-        time.sleep(10)
-        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", mensagem, "resultado", "B", 10)
+        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", rollback, "resultado", "B", 10)
 
         if resposta_rollback is None:
-            registrar_rollback(mensagem,SERVER_URL_B)
-        else: 
-            print(f"O rollback foi bem-sucedido: {resposta_rollback}")
-
-
+            registrar_rollback(mensagem, "B")
 
     print(resposta_rollback)
 
@@ -323,100 +333,12 @@ def handle_comprar_cliente():
         with file_lock:
             desregistra_trechos_escolhidos(trechos_server_a, cpf)
     return jsonify({"resultado": "Caminho indisponível"}), 300
-        
-
-
-
-
-
-
-
-def tentar_rollback_novamente():
-    file_path = "rollback_failures.json"
-    if os.path.exists(file_path):
-        with open(file_path, "r") as file:
-            rollback_data = json.load(file)
-
-        falhas_resolvidas = []  #lista para armazenar falhas que foram resolvidas (reescrevern o arquivo)
-
-
-        if not rollback_data["servidor_B"] and not rollback_data["servidor_C"]:
-            print("Nenhuma falha de rollback encontrada.")
-            return  #se n tiver falha sai função se não houver falhas
-        
-
-        for falha in rollback_data["servidor_B"]: #para falha do servidor B
-           
-
-            resposta_rollback = requests_delete(falha['servidor'], "/rollback", falha['mensagem'], "resultado", "B", 10)
-
-            if resposta_rollback is not None:
-                print("Rollback bem-sucedido na nova tentativa para B!")
-                falhas_resolvidas.append(falha)
-                
-            else:
-                print("Rollback será tentado na proxima vez")
-               
-
-        for falha in rollback_data["servidor_C"]: #para cada falah no servidor C
-            
-            resposta_rollback = requests_delete(falha['servidor'], "/rollback", falha['mensagem'], "resultado", "B", 10)
-
-            if resposta_rollback is not None:
-                print("Rollback bem-sucedido na nova tentativa para C!")
-                falhas_resolvidas.append(falha)
-                
-            else:
-                print("Rollback será tentado na proxima vez")
-                
-
-        # Reescreve o arquivo apenas com as falhas não resolvidas
-        with open(file_path, "w") as file:
-            rollback_data["servidor_B"] = [falha for falha in rollback_data["servidor_B"] if falha not in falhas_resolvidas]
-            rollback_data["servidor_C"] = [falha for falha in rollback_data["servidor_C"] if falha not in falhas_resolvidas]
-            json.dump(rollback_data, file, indent=4)
-
-
-
-
-
-
-def registrar_rollback(mensagem, servidor):
-    file_path = "rollback_failures.json"
-
-    #verifica se o arquivo já existe
-    if os.path.exists(file_path):
-        with open(file_path, "r") as file:
-            #carregando o conteúdo do arquivo
-            rollback_data = json.load(file)
-    else:
-        #se não existir, cria 
-        rollback_data = {"servidor_B": [], "servidor_C": []}
-
-    #registra a mensagem de rollback no servidor apropriado
-    if servidor == SERVER_URL_B:
-        rollback_data["servidor_B"].append({"mensagem": mensagem, "servidor": SERVER_URL_B})
-    elif servidor == SERVER_URL_C:
-        rollback_data["servidor_C"].append({"mensagem": mensagem, "servidor": SERVER_URL_C})
-
-    # Salva as mudanças de volta ao arquivo
-    with open(file_path, "w") as file:
-        json.dump(rollback_data, file, indent=4)
-
-
-
-
-
-
-
-
-
 
 # Verifica e registra compra de trechos (outro servidor pediu)
 @app.route('/comprar_servidor', methods=['POST'])
 def handle_comprar_servidor():
-    with file_lock:
-        tentar_rollback_novamente()
+    tentar_rollback_novamente()
+
     # Transforma mensagem do cliente em dicionário
     data = request.json
     
@@ -458,18 +380,19 @@ def handle_rollback():
     # Transforma mensagem do servidor em dicionário
     data = request.json
     
-    # Pega caminho e cpf escolhido a desfazer a compra
-    caminho = data['caminho']
-    cpf = data['cpf']
-
-    # Separa cada trecho do caminho ao seu devido servidor
-    trechos_server_a, trechos_server_b, trechos_server_c = desempacota_caminho_cliente(caminho)
-
-    # Desfaz a compra
     # REGIÃO CRITICA
     with file_lock:
-        # Adiciona assento aos trechos, remove cpf dos trechos e remove compra associada ao cpf
-        desregistra_trechos_escolhidos(trechos_server_a, cpf)
+        for rollback in data:
+            # Pega caminho e cpf escolhido a desfazer a compra
+            caminho = rollback['caminho']
+            cpf = rollback['cpf']
+
+            # Separa cada trecho do caminho ao seu devido servidor
+            trechos_server_a, trechos_server_b, trechos_server_c = desempacota_caminho_cliente(caminho)
+
+            # Desfaz a compra
+            # Adiciona assento aos trechos, remove cpf dos trechos e remove compra associada ao cpf
+            desregistra_trechos_escolhidos(trechos_server_a, cpf)
 
     return jsonify({"resultado": "Rollback realizado com sucesso no servidor A"})
 
@@ -486,3 +409,4 @@ if __name__ == "__main__":
     # Se app.run der merda, exibe a merda e encerra programa
     except (OSError, Exception) as e:
         print(f"Erro: {e}")
+        # time.sleep(10) para testes
