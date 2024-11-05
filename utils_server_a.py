@@ -4,6 +4,7 @@ import networkx as nx
 
 ARQUIVO_GRAFO = 'grafo_A.json'
 ARQUIVO_PASSAGENS_COMPRADAS = 'passagens_A.json'
+ARQUIVO_ROLLBACKS_FALHOS = 'rollbacks_falhos.json'
 
 # Constante que determina valor de 100km do servidor
 VALOR_100_KM = 115
@@ -131,6 +132,24 @@ def carregar_passagens_compradas():
     except FileNotFoundError:
         # Retorna um dicionário vazio se o arquivo não existir (não teve nenhuma compra ainda)
         return {}
+    
+# Função que carrega todos os rollbacks falhos de outros servidores
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        dicionário com rollbacks ou vazio
+# Retorna algo parecido com essa estrutura:
+# { 
+#   "B": [ {'caminho': ..., 'cpf': ...}, {'caminho': ..., 'cpf': ...}, ... ],
+#   "C": [ {'caminho': ..., 'cpf': ...}, {'caminho': ..., 'cpf': ...}, ... ]
+# }
+def carregar_rollbacks_failures():
+    try:
+        with open(ARQUIVO_ROLLBACKS_FALHOS, 'r') as arq:
+            # Retorna dicionário (cpf são as chaves)
+            return json.load(arq)
+        
+    except FileNotFoundError:
+        # Retorna um dicionário vazio se o arquivo não existir (não teve nenhuma compra ainda)
+        return {"B": [], "C": []}
 
 # Função que salva o grafo no arquivo (atualiza)
 # Parâmetros ->     grafo_att: grafo dos trechos com informações atualizadas para ser salvo em arquivo
@@ -158,6 +177,13 @@ def salvar_grafo(grafo_att):
 # Retorno ->        Sem retorno
 def salvar_passagem_comprada(dicionario_att):
     with open(ARQUIVO_PASSAGENS_COMPRADAS, 'w') as arq:
+        json.dump(dicionario_att, arq, indent=4)
+
+# Função que salva um dicionário no arquivo (atualiza)
+# Parâmetros ->     dicionario_att: dicionario das passagens com informações atualizadas para ser salvo em arquivo
+# Retorno ->        Sem retorno
+def salvar_rollbacks_failures(dicionario_att):
+    with open(ARQUIVO_ROLLBACKS_FALHOS, 'w') as arq:
         json.dump(dicionario_att, arq, indent=4)
 
 # Função que encontra 10 caminhos entre origem e destino, e retorna ordenado considerando distancia total (menor ao maior)
@@ -423,3 +449,14 @@ def servidor_encontrou_passagem(passagens_a, passagens_b, passagens_c):
             print(f"Servidor {NOMES_SERVIDORES[i]} não encontrou passagem.")
     
     return passagens_servidores
+
+# Função para registrar que servidor B ou C não realizou um rollback
+# Parâmetros ->     mensagem: trechos e cpf da compra a sofrer rollback
+#                   servidor: nome do servidor que não realizou o rollback
+# Retorno ->        Sem retorno
+def registrar_rollback(mensagem, servidor):
+    rollback_data = carregar_rollbacks_failures()
+
+    rollback_data[servidor].append(mensagem)
+
+    salvar_rollbacks_failures(rollback_data)
