@@ -125,7 +125,7 @@ Foi criado um script para testes.
 O código está quase completamente comentado e documentado.
 
 **Emprego do Docker**:
-Em andamento.
+Implementado.
 
 **Conclusão**
 Por fim, está sendo possível criar um sistema servidor-cliente e servidor-servidor robusto e resistente a falhas, com forma maleável e eficaz. O fato de não haver registro de estados por parte do servidor, bem como as conexão só ocorrerem no momento de envio da mensagem, faz desse sistema bastante seguro. O servidor aceita múltiplas linhas de execução (Threads) e possuí segurança no que diz respeito a acesso e segurança dos dados, evitando problemas como compras de uma passagem não mais disponível. De melhoras para o sistema, um sistema de cache para maior velocidade de processamento seria uma adição bem-vinda para o sistema, de forma adicionar ainda mais eficácia do servidor no processamento de requisições, além de um sistemas de "Lock" por trechos ou caminhos em vez de arquivos. Por fim, um sistema de "Load balancing" seria interessante no tocante a distribuição de clientes por servidores. O emprego do Docker está em andamento.
