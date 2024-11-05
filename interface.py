@@ -89,7 +89,7 @@ def selecionar_cidades(cidades):
 #                   caminhos_ordenados_valor: lista de caminhos encontrados retornados pelo servidor (a depender do valor)
 # Retorno ->        path: caminho escolhido pelo cliente
 #                   cpf: cpf do cliente
-def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_ordenados_valor):
+def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_ordenados_valor,escolha1,cpf1):
     imprime_divisoria()
     
     # Lista unificada para armazenar os caminhos - Junta as 2 listas para melhorar identificação
@@ -112,21 +112,22 @@ def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_o
     
     print("0- Encerrar programa\n100- Menu\n")
 
-    while True:
-        escolha = input("Escolha um caminho: ")
-        if escolha.isdigit() and (0 <= int(escolha) <= len(caminhos_unificados) or int(escolha) == 100):
-            break
-        print("Entrada inválida.")
+    # while True:
+    #     escolha = input("Escolha um caminho: ")
+    #     if escolha.isdigit() and (0 <= int(escolha) <= len(caminhos_unificados) or int(escolha) == 100):
+    #         break
+    #     print("Entrada inválida.")
+    escolha = escolha1
 
     if escolha in ["0", "100"]:
         return escolha, None
     
-    while True:
-        cpf = input("Digite seu CPF para registro da compra (apenas número maior que 100): ")
-        if cpf.isdigit() and (int(cpf) == 0 or int(cpf) >= 100):
-            break
-        print("Entrada inválida.")
-    
+    # while True:
+    #     cpf = input("Digite seu CPF para registro da compra (apenas número maior que 100): ")
+    #     if cpf.isdigit() and (int(cpf) == 0 or int(cpf) >= 100):
+    #         break
+    #     print("Entrada inválida.")
+    cpf = cpf1
     # EX: (223, 300, ["A", "B"], ["curitiba", "cuiabá", "sao paulo"])
     caminho = caminhos_unificados[int(escolha) - 1]
 
