@@ -55,20 +55,16 @@ Existem métodos GET com os endpoints "/passagens_servidor" e "/caminhos_servido
 |------------------------|-----------------|----------------------------------------------------------------------------------------------------|
 | `/caminhos_servidor`   | GET             | Retorna os caminhos disponíveis de origem a destino, conforme solicitado por outro servidor.       |
 | `/passagens_servidor`  | GET             | Verifica e retorna as passagens compradas de um cliente, conforme solicitado por outro servidor.   |
-| `/comprar_servidor`    | POST            | Registra e verifica a compra de trechos solicitada por outro servidor, para fins de sincronização. |
+| `/comprar_servidor`    | POST            | Registra e verifica a compra de trechos solicitada por outro servidor                              |
 
 Também possuem um campo mensagem e possui semelhança com as mensagens das requições cliente-servidor.
 
-Além desses, existem quatro métodos POST usados para sincronização e para evitar situações onde o rollback seria necessário. Esses métodos não transmitem dados e são usados como "mensageiros" responsáveis por coordenar eventos (estruturas de controle de fluxo em Python que bloqueiam a execução do código) e ativá-los. A compra de uma passagem só ocorrerá se todas as entidades envolvidas tiverem os recursos necessários para que a compra seja efetuada; ou seja, a compra só será realizada se todos confirmarem que o recurso existe. O primeiro desses métodos é o endpoint /status, o principal responsável por coordenar a compra. Esse método está presente em todos os servidores, mas é efetivamente usado no servidor diretamente ligado ao cliente (chamado de "servidor base"). Ele chama outros métodos "mensageiros" que estão do lado do servidor alvo da comunicação (chamados de "servidores secundários").
-
-Um dos métodos dos "servidores secundários" tem o endpoint /confirmacao_etapa, que libera o fluxo do código bloqueado (variável Event) ao receber o comando "set", permitindo que o programa continue. Os outros dois endpoints são /mentira e /verdade. Esses métodos são acionados pelo "servidor base" para indicar, respectivamente, se o "servidor base" não possui ou possui o recurso solicitado e tem como finalidade liberar o recurso bloqueado, seja para completar a compra ou para abandoná-la.
+Para além dos GET e POST, ainda no protocólo de comunicação, existem mensagens de ''rollback'' ou seja, mensagens que buscam desfazer algum tipo de alteração que tinha sido feita anteriormente. É usada pela lógica das compras sempre começarem do servidor onde foi conectado e dispara Threads para os outros servidores se eles tiverem trechos a cederem. Se o cliente conectou no servidor A e tem trechos envolvendo esse servidor a compra já é feita. Se tiver trechos de outros servidores, por exemplo do B, e está disponível, é feita a compra, mas se tiver um trecho no servidor C, e este não estiver disponível, é feito o rollback tanto em A quanto em B.
 
 | Endpoint                   | Significado                                                                                                                                                                               |
 |----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `/confirmacao_etapa`       | Libera a espera de confirmação em processos bloqueados, permitindo que o fluxo do programa continue.                                                                                      |
-| `/verdade`                 | Confirmação enviada do servidor principal para os servidores secundários, indicando que os recursos necessários estão disponíveis para a compra.                                          |
-| `/mentira`                 | Confirmação enviada do servidor principal para os servidores secundários, indicando que os recursos necessários não estão disponíveis e a compra deve ser abortada.                       |
-| `/status`                  | Coordena o processo de compra, verificando a disponibilidade de recursos nos servidores secundários. Esse endpoint é usado pelo servidor principal para gerenciar o fluxo de aquisição. |
+| `/rollbaack        `       | Ordem de rollback (desfaz compra caso outro servidor não consiga realizar sua compra)                                                                                     |
+
 
 
 **Roteamento**: 
@@ -87,9 +83,7 @@ Seguindo essa lógica, um caminho pode ser encontrado misturando trechos dos tr�
 
 **Concorrência Distribuída**: 
 
-Para lidar com a concorrência foi feito uso de um algorítmo baseado no Two Phase Commit (2PC). A escolha se deu por ser um algoritmo relativamente simples de se aplicar e pelo fato do time decidir evitar por potênciais situações de rollback, só fazendo uma compra quando todos concordarem que a compra pode ser realizada. Diante disso, foi implementado um sistema de mensageria onde o "servidor base" coordena a compra de passagens, essa coordenação tem participação ativa dos "servidores secundários", por quê, caso esses não tenham um trecho, eles tem que avisar para o "servidor base", fazendo com que a compra seja cancelada.
-
-Para aplicar essa solução fez-se uso de Locks (responsáveis por travarem regiões críticas) e Events (responsáveis por controlar o fluxo do código). Para ilustrar melhor, como ocorre a compra de passagem num cenário onde o cliente se conecta a um servidor A e esse a um servidor B, tem-se o seguinte diagrama:
+Para lidar com a concorrência foi feito uso de um algorítmo que usava de Locks (responsáveis por travarem regiões críticas) e Threads para processarem compras de outros servidores. O Lock de um servidor é comum a todas requisições e endpoints. De modo que, uma operação de compra iniciada por um cliente e uma por outro servidor, compartilham do mesmo lock. Esse algoritmo preza sempre pelo cenário ideal, recebe o nome de "One Phase Commit", pois se existe uma necessidade de trecho de um servidor, ele já inicia a compra, mesmo que aquele server, nesse meio tempo possa ter perdido aquela vaga de alguma forma. Se esse cenário ocorrer, como já foi dito, é disparada uma ordem de "rollback".
 
 <p align="center">
   <img src="/imagens/diagrama_sequencia.png" width = "600" />
@@ -97,37 +91,31 @@ Para aplicar essa solução fez-se uso de Locks (responsáveis por travarem regi
 <p align="center"><strong> Figura 1. Fluxo de mensagens para uma compra bem sucedida envolvendo A e B </strong></p>
 </strong></p>
 
-Os eventos sempre ficam em posições onde é necessário primeiro que o "servidor base" envie uma mensagem, por questões de sicronização.
-Lugares onde foi usado o Event no Server B:
-
-* Logo após a sinalização que B adquiriu o Lock
-* Logo depois da confirmação ou não que B tem trechos disponíveis
-
-Já no Servidor A, o Event estava:
-* Logo depois da confirmação se A detém trechos daquele caminho (A só tem que esperar por B, pra ver se vai comprar ou não) ou; se A não tem nenhum trecho (A vai servir só como um intermediário para compra), o Event está travando o andamento no código pois é necessário a responsta do Servidor B para o andamento da operação, visto que ela é atômica.
-
-Em relação aos Locks, qualquer área lidando com arquivos ele é acionado e utilizado.
+Para os casos onde, por exemplo, uma ordem de rollback foi emitida para o servidor B, e esse cai antes de desfazer a alteração solicitada, o servidor que emitiu a ordem de rollback salva em um arquivo essa ordem, para posteriormente manda-lá novamente. A verificação de pendência de rollback é sempre emitida quando uma requisição - não importa se Get ou Post - ocorre, se a verificação acusar um ''rollback'' não realizado, a alteração é desfeita.
 
 **Confiabilidade da solução**: 
 
 Se um cliente está fazendo uma compra no Servidor A e esse caí, é possível prosseguir com a compra a partir daquele momento. Isso se da pelo uso do paradigma Stateless provido pelo próprio HTTP.
-A Priori, com a queda de servidores a consistência da concorrência distribuída se mantém, justamente pelo fato de usar-se uma operação atômica na compra de passagens onde só é feito o commit se todos concordarem.
+Se um cliente está fazendo uma compra no Servidor A e esse compra trechos em outros servidores, e um desses não responde ou não tem mais trechos, a compra em A sofre Rollback.
+
+A Priori, com a queda de servidores a consistência da concorrência distribuída se mantém, somente se o servidor que o cliente se conectou permanece conectado, pois é ele que é o responsável por emitir as ordens de rollback. Se por exemplo, o servidor A, que foi o conectado cair, antes de emitir as ordem de rollback, ocasionaria em prejuizos.
 Assim como no VendePass, foi adicionado timeout para requisicoes e conexões que por muito tempo não são respondidas. 
-Mais testes envolvendo confiabilidade são necessários.
+
 
 **Avaliação da solução**: 
 Foi criado um script para testes. 
 * O primeiro cenário foi envolvendo somente um servidor, A, de modo que 5 clientes tentam competir por 3 vagas, ocorreu tudo bem de modo que 2 clientes ficaram sem vagas, mas não foi computado nenhuma vaga que não existia.
-* Já o segundo cenário envolvia agora dois servidores A e B. O script abria diversos terminais, sendo que os pares o cliente era conectado ao A e os impares o cliente era conectado ao B. O mesmo recursos eram solicitados, a diferença estava no fato que "A" não detinha alguns recursos, enquanto B tinha todos os recursos, pelos testes o programa se comportou bem, apesar do número baixo de vagas (eram somente 10 para 15 clientes), assim como no primeiro caso, não houve incoerência relacionado ao número de vagas, seja por sobrecompra ou subcompra. Mais testes nesse cenário são necessários, para saber o quão balanceados estão sendo as compras feita em cada servidores e se será necessário algum sistema de Load balancing.
-* O Último script para testes envolveria uma magnitude muito grande de solicitações e envolveria o três servidores, será feito em breve.
+* Já o segundo cenário envolvia agora três servidores A, B e C. O script se conectava ao Servidor B, e abria diversos 5 terminais. O que ocorre é que para o Servidor A tinha 4 vagas para o trecho, e o B e C tinha 5 vagas para os respectivos trechos. A compra foi efetuada corretamente, e somente 4 passagens foram compradas, de modo que foi feito o rollback de uma delas.
+* O Último script para testes envolveu uma magnitude muito grande de solicitações (100), no inicio das 100 solicitações ocorreu uma demora, mas conforme chegou na faixa dos 60-70 solicitações o fluxo aumentou rapidamente.
+* O último, o script abria 20 terminais, sendo que os pares o cliente era conectado ao A e os impares o cliente era conectado ao B. O mesmo recursos eram solicitados, pelos testes o programa se comportou bem, apesar do número baixo de vagas (eram somente 10 para 20 clientes), assim como no primeiro caso, não houve incoerência relacionado ao número de vagas, seja por sobrecompra ou subcompra. Mais testes nesse cenário são necessários, para saber o quão balanceados estão sendo as compras feita em cada servidores e se será necessário algum sistema de Load balancing.
 
 **Documentação do código**:
 O código está quase completamente comentado e documentado.
 
 **Emprego do Docker**:
-Implementado.
+Implementado. Foi criado Dockers para os servidor A, B e C e um para o cliente. Foi criado também um docker-compose, para orquestras o relacionamento das 4 entidades e o estabelecimento de uma rede entra elas no ambiente de testagem Docker.
 
 **Conclusão**
-Por fim, está sendo possível criar um sistema servidor-cliente e servidor-servidor robusto e resistente a falhas, com forma maleável e eficaz. O fato de não haver registro de estados por parte do servidor, bem como as conexão só ocorrerem no momento de envio da mensagem, faz desse sistema bastante seguro. O servidor aceita múltiplas linhas de execução (Threads) e possuí segurança no que diz respeito a acesso e segurança dos dados, evitando problemas como compras de uma passagem não mais disponível. De melhoras para o sistema, um sistema de cache para maior velocidade de processamento seria uma adição bem-vinda para o sistema, de forma adicionar ainda mais eficácia do servidor no processamento de requisições, além de um sistemas de "Lock" por trechos ou caminhos em vez de arquivos. Por fim, um sistema de "Load balancing" seria interessante no tocante a distribuição de clientes por servidores. O emprego do Docker está em andamento.
+Por fim, está sendo possível criar um sistema servidor-cliente e servidor-servidor robusto e resistente a falhas (com exceção da falha do nó principal), com forma maleável e eficaz. O fato de não haver registro de estados por parte do servidor, bem como as conexão só ocorrerem no momento de envio da mensagem, faz desse sistema bastante seguro. O servidor aceita múltiplas linhas de execução (Threads) e possuí segurança no que diz respeito a acesso e segurança dos dados, evitando problemas como compras de uma passagem não mais disponível. De melhoras para o sistema, um sistema de cache para maior velocidade de processamento seria uma adição bem-vinda para o sistema, de forma adicionar ainda mais eficácia do servidor no processamento de requisições, além de um sistemas de "Lock" por trechos ou caminhos em vez de arquivos. Por fim, um sistema de "Load balancing" seria interessante no tocante a distribuição de clientes por servidores. O emprego do Docker está em andamento.
 
 
