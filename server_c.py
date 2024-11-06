@@ -199,8 +199,8 @@ def handle_comprar_cliente():
     if not trechos_server_b and not trechos_server_a:
         return jsonify({"resultado": "Compra realizada com sucesso"}), 200
 
-    # Se server C não tem caminho; server C tem caminho, está tudo disponível e server B e/ou A tem caminho; verifica com
-    # os outros servidores
+    # Se server C não tem nenhum trecho compondo o caminho da compra; server C tem trechos no caminho, está tudo disponível e 
+    # server B e/ou A tem trechos do caminho; verifica com os outros servidores
 
     mensagem = {
         "caminho": caminho,
@@ -214,11 +214,13 @@ def handle_comprar_cliente():
     threads = []
 
     if trechos_server_b:
+        print("Enviando solicitação de compra para servidor B")
         thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_B, mensagem, "resultado", "B", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()
 
     if trechos_server_a:
+        print("Enviando solicitação de compra para servidor A")
         thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_A, mensagem, "resultado", "A", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()

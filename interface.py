@@ -117,7 +117,6 @@ def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_o
         if escolha.isdigit() and (0 <= int(escolha) <= len(caminhos_unificados) or int(escolha) == 100):
             break
         print("Entrada inválida.")
-    # escolha = escolha1
 
     if escolha in ["0", "100"]:
         return escolha, None
@@ -127,7 +126,7 @@ def selecionar_caminho(origem, destino, caminhos_ordenados_distancia, caminhos_o
         if cpf.isdigit() and (int(cpf) == 0 or int(cpf) >= 100):
             break
         print("Entrada inválida.")
-    # cpf = cpf1
+
     # EX: (223, 300, ["A", "B"], ["curitiba", "cuiabá", "sao paulo"])
     caminho = caminhos_unificados[int(escolha) - 1]
 

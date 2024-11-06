@@ -223,11 +223,13 @@ def handle_comprar_cliente():
     threads = []
 
     if trechos_server_b:
+        print("Enviando solicitação de compra para servidor B")
         thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_B, mensagem, "resultado", "B", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()
 
     if trechos_server_c:
+        print("Enviando solicitação de compra para servidor C")
         thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_C, mensagem, "resultado", "C", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()

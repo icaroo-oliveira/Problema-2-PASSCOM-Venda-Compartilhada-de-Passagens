@@ -1,19 +1,17 @@
 import requests
 
 # Url de cada servidor
-# SERVER_URL_A = "http://127.0.0.1:65433"
-# SERVER_URL_B = "http://127.0.0.1:65434"
-# SERVER_URL_C = "http://127.0.0.1:65435"
-
+#SERVER_URL_A = "http://127.0.0.1:65433"
+#SERVER_URL_B = "http://127.0.0.1:65434"
+#SERVER_URL_C = "http://127.0.0.1:65435"
 
 SERVER_URL_A = "http://server_a:65433"
 SERVER_URL_B = "http://server_b:65434"
 SERVER_URL_C = "http://server_c:65435"
 
-
 #ou http://localhost:65433
 
-# Tempos random para verificação novamente de trechos disponíveis
+# Tempos random para verificação novamente de trechos disponíveis (milésimos)
 times = (0.1, 0.15, 0.2, 0.25, 0.3)
 
 # Função para requisições do tipo get
