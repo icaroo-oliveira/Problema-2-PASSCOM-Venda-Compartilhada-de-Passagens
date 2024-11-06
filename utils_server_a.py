@@ -4,7 +4,7 @@ import networkx as nx
 
 ARQUIVO_GRAFO = 'grafo_A.json'
 ARQUIVO_PASSAGENS_COMPRADAS = 'passagens_A.json'
-ARQUIVO_ROLLBACKS_FALHOS = 'rollbacks_falhos.json'
+ARQUIVO_ROLLBACKS_FALHOS = 'rollbacks_falhos_A.json'
 
 # Constante que determina valor de 100km do servidor
 VALOR_100_KM = 115

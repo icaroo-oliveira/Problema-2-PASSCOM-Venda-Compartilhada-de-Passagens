@@ -30,19 +30,21 @@ def tentar_rollback_novamente():
 
         # Se servidor B tem rollback a realizar
         if server_B:
-            resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", server_B, "resultado", "B", 10)
+            resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", server_B, "resultado", "B", 7)
 
             # Significa que rollback foi realizado, logo posso apagar do arquivo
             if resposta_rollback is not None:
+                print(resposta_rollback)
                 rollback_data["B"] = []
                 salvar_rollbacks_failures(rollback_data)
 
         # Se servidor C tem rollback a realizar    
         if server_C:
-            resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", server_C, "resultado", "C", 10)
+            resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", server_C, "resultado", "C", 7)
 
             # Significa que rollback foi realizado, logo posso apagar do arquivo
             if resposta_rollback is not None:
+                print(resposta_rollback)
                 rollback_data["C"] = []
                 salvar_rollbacks_failures(rollback_data)
 
@@ -205,8 +207,8 @@ def handle_comprar_cliente():
     if not trechos_server_b and not trechos_server_c:
         return jsonify({"resultado": "Compra realizada com sucesso"}), 200
 
-    # Se server A não tem caminho; server A tem caminho, está tudo disponível e server B e/ou C tem caminho; verifica com
-    # os outros servidores
+    # Se server A não tem nenhum trecho compondo o caminho da compra; server A tem trechos no caminho, está tudo disponível e 
+    # server B e/ou C tem trechos do caminho; verifica com os outros servidores
 
     mensagem = {
         "caminho": caminho,
@@ -218,15 +220,12 @@ def handle_comprar_cliente():
 
     # Cria threads para solicitar caminhos dos servidores B e C
     threads = []
-    # time.sleep(10) para testes
+
     if trechos_server_b:
         thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_B, mensagem, "resultado", "B", respostas, "/comprar_servidor", 10))
         threads.append(thread)
         thread.start()
 
-    # print("indo para compra de C") para testes
-
-    # time.sleep(20) #para testes
     if trechos_server_c:
         thread = threading.Thread(target=solicitar_comprar, args=(SERVER_URL_C, mensagem, "resultado", "C", respostas, "/comprar_servidor", 10))
         threads.append(thread)
@@ -235,8 +234,7 @@ def handle_comprar_cliente():
     # Aguarda todas as threads terminarem (se criou alguma)
     for thread in threads:
         thread.join()
-    print("c nao tinha mais")
-    time.sleep(10)
+
     # Retorna as respostas dos servidores (se tinha trechos A ENVIAR) ou retorna -1 (não tinha trechos A ENVIAR)
     # ps: só vai ser -1 se nem criou threads pra enviar ao servidor (nem tinha oq enviar)
     resposta_b, status_b = respostas.get("B", (-1, -1))
@@ -280,7 +278,13 @@ def handle_comprar_cliente():
             
             return jsonify({"resultado": "Caminho indisponível"}), 300
 
-    # Caso 2: Ambos os servidores não tinham mais os trechos ou não respoderam
+    # Caso 2: Ambos os servidores tiveram sucesso
+    if status_b == 200 and status_c == 200:
+        print(resposta_b)
+        print(resposta_c)
+        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+
+    # Caso 3: Ambos os servidores não tinham mais os trechos ou não respoderam
     if (status_b == 300 or status_b is None) and (status_c == 300 or status_c is None):
         if status_b == 300:
             print(resposta_b)
@@ -296,12 +300,6 @@ def handle_comprar_cliente():
             # Informa ao cliente que compra deu erro
             return jsonify({"resultado": "Caminho indisponível"}), 300
 
-    # Caso 3: Ambos os servidores tiveram sucesso
-    if status_b == 200 and status_c == 200:
-        print(resposta_b)
-        print(resposta_c)
-        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
-
     # Caso 4: Um servidor falha e o outro tem sucesso (realiza rollback no que teve sucesso)
     # ps: Caso o servidor A tenha realizado compra, também desfaz
 
@@ -312,8 +310,9 @@ def handle_comprar_cliente():
         if status_b == 300:
             print(resposta_b)
         
-        resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", rollback, "resultado", "C", 10)
+        resposta_rollback = requests_delete(SERVER_URL_C, "/rollback", rollback, "resultado", "C", 7)
 
+        # Se servidor C não realizou rollback (off ou sem rede), registro par tentar de novo em outro momento
         if resposta_rollback is None:
             registrar_rollback(mensagem, "C")
 
@@ -322,8 +321,9 @@ def handle_comprar_cliente():
         if status_c == 300:
             print(resposta_c)
         
-        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", rollback, "resultado", "B", 10)
+        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", rollback, "resultado", "B", 7)
 
+        # Se servidor B não realizou rollback (off ou sem rede), registro par tentar de novo em outro momento
         if resposta_rollback is None:
             registrar_rollback(mensagem, "B")
 
@@ -332,6 +332,7 @@ def handle_comprar_cliente():
     if trechos_server_a:
         with file_lock:
             desregistra_trechos_escolhidos(trechos_server_a, cpf)
+            
     return jsonify({"resultado": "Caminho indisponível"}), 300
 
 # Verifica e registra compra de trechos (outro servidor pediu)
@@ -409,4 +410,3 @@ if __name__ == "__main__":
     # Se app.run der merda, exibe a merda e encerra programa
     except (OSError, Exception) as e:
         print(f"Erro: {e}")
-        # time.sleep(10) para testes
