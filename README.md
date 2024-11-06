@@ -93,6 +93,15 @@ Para lidar com a concorrência foi feito uso de um algorítmo que usava de Locks
 
 Para os casos onde, por exemplo, uma ordem de rollback foi emitida para o servidor B, e esse cai antes de desfazer a alteração solicitada, o servidor que emitiu a ordem de rollback salva em um arquivo essa ordem, para posteriormente manda-lá novamente. A verificação de pendência de rollback é sempre emitida quando uma requisição - não importa se Get ou Post - ocorre, se a verificação acusar um ''rollback'' não realizado, a alteração é desfeita.
 
+O diagrama de sequência abaixo, ilustra outros casos, como a compra ideal e trechos indisponíveis em outros servidores ou no próprio A.
+
+<p align="center">
+  <img src="/imagens/diagrama_sequencia.png" width = "600" />
+</p>
+<p align="center"><strong> Figura 2. Fluxo de mensagens para uma compra bem sucedida e não sucedida por falta de trechos </strong></p>
+</strong></p>
+
+
 **Confiabilidade da solução**: 
 
 Se um cliente está fazendo uma compra no Servidor A e esse caí, é possível prosseguir com a compra a partir daquele momento. Isso se da pelo uso do paradigma Stateless provido pelo próprio HTTP.
