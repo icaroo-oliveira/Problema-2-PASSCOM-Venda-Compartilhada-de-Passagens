@@ -14,6 +14,41 @@ file_lock = threading.Lock()
 HOST = '0.0.0.0'
 PORTA = 65435
 
+# Função que verifica se algum servidor alheio deu erro na realização de algum rollback, ou seja, tem rollback pendente
+# Essa verificação é feita a cada nova requisição recebida pelo servidor
+# Parâmetros ->     Sem parâmetros
+# Retorno ->        Sem retorno
+def tentar_rollback_novamente():
+    with file_lock:
+        rollback_data = carregar_rollbacks_failures()
+
+        server_A = rollback_data["A"]
+        server_B = rollback_data["B"]
+
+        # Se nenhum servidor tem rollback pendente, encerra a função
+        if not server_A and not server_B:
+            return
+
+        # Se servidor A tem rollback a realizar
+        if server_A:
+            resposta_rollback = requests_delete(SERVER_URL_A, "/rollback", server_A, "resultado", "A", 7)
+
+            # Significa que rollback foi realizado, logo posso apagar do arquivo
+            if resposta_rollback is not None:
+                print(resposta_rollback)
+                rollback_data["A"] = []
+                salvar_rollbacks_failures(rollback_data)
+
+        # Se servidor B tem rollback a realizar    
+        if server_B:
+            resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", server_B, "resultado", "B", 7)
+
+            # Significa que rollback foi realizado, logo posso apagar do arquivo
+            if resposta_rollback is not None:
+                print(resposta_rollback)
+                rollback_data["B"] = []
+                salvar_rollbacks_failures(rollback_data)
+
 # Retorna caminhos encontrados de origem a destino (cliente pediu)
 @app.route('/caminhos_cliente', methods=['GET'])
 def handle_caminhos_cliente():
@@ -235,7 +270,13 @@ def handle_comprar_cliente():
             
             return jsonify({"resultado": "Caminho indisponível"}), 300
 
-    # Caso 2: Ambos os servidores não tinham mais os trechos ou não respoderam
+    # Caso 2: Ambos os servidores tiveram sucesso
+    if status_b == 200 and status_a == 200:
+        print(resposta_b)
+        print(resposta_a)
+        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
+
+    # Caso 3: Ambos os servidores não tinham mais os trechos ou não respoderam
     if (status_b == 300 or status_b is None) and (status_a == 300 or status_a is None):
         if status_b == 300:
             print(resposta_b)
@@ -251,38 +292,39 @@ def handle_comprar_cliente():
             # Informa ao cliente que compra deu erro
             return jsonify({"resultado": "Caminho indisponível"}), 300
 
-    # Caso 3: Ambos os servidores tiveram sucesso
-    if status_b == 200 and status_a == 200:
-        print(resposta_b)
-        print(resposta_a)
-        return jsonify({"resultado": "Compra realizada com sucesso"}), 200
-
     # Caso 4: Um servidor falha e o outro tem sucesso (realiza rollback no que teve sucesso)
     # ps: Caso o servidor C tenha realizado compra, também desfaz
 
-
-    # ÍCARO, É AQUI QUE NÃO TA CONSIDERANDO QUE O ROLLBACK PODE DAR MERDA, OU SEJA, SERVER ESTAR OFF
-
+    rollback = [mensagem]
 
     # Servidor A teve sucesso e servidor B não
     if (status_b == 300 or status_b is None) and status_a == 200:
         if status_b == 300:
             print(resposta_b)
             
-        resposta_rollback = requests_delete(SERVER_URL_A, "/rollback", mensagem, "resultado", "A", 10)
+        resposta_rollback = requests_delete(SERVER_URL_A, "/rollback", rollback, "resultado", "A", 10)
+
+        # Se servidor A não realizou rollback (off ou sem rede), registro par tentar de novo em outro momento
+        if resposta_rollback is None:
+            registrar_rollback(mensagem, "A")
 
     # Servidor B teve sucesso e servidor A não
     elif (status_a == 300 or status_a is None) and status_b == 200:
         if status_a == 300:
             print(resposta_a)
         
-        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", mensagem, "resultado", "B", 10)
+        resposta_rollback = requests_delete(SERVER_URL_B, "/rollback", rollback, "resultado", "B", 10)
+
+        # Se servidor B não realizou rollback (off ou sem rede), registro par tentar de novo em outro momento
+        if resposta_rollback is None:
+            registrar_rollback(mensagem, "B")
 
     print(resposta_rollback)
 
     if trechos_server_c:
         with file_lock:
             desregistra_trechos_escolhidos(trechos_server_c, cpf)
+
     return jsonify({"resultado": "Caminho indisponível"}), 300
         
 # Verifica e registra compra de trechos (outro servidor pediu)
@@ -329,18 +371,19 @@ def handle_rollback():
     # Transforma mensagem do servidor em dicionário
     data = request.json
     
-    # Pega caminho e cpf escolhido a desfazer a compra
-    caminho = data['caminho']
-    cpf = data['cpf']
-
-    # Separa cada trecho do caminho ao seu devido servidor
-    trechos_server_a, trechos_server_b, trechos_server_c = desempacota_caminho_cliente(caminho)
-
-    # Desfaz a compra
     # REGIÃO CRITICA
     with file_lock:
-        # Adiciona assento aos trechos, remove cpf dos trechos e remove compra associada ao cpf
-        desregistra_trechos_escolhidos(trechos_server_c, cpf)
+        for rollback in data:
+            # Pega caminho e cpf escolhido a desfazer a compra
+            caminho = rollback['caminho']
+            cpf = rollback['cpf']
+
+            # Separa cada trecho do caminho ao seu devido servidor
+            trechos_server_a, trechos_server_b, trechos_server_c = desempacota_caminho_cliente(caminho)
+
+            # Desfaz a compra
+            # Adiciona assento aos trechos, remove cpf dos trechos e remove compra associada ao cpf
+            desregistra_trechos_escolhidos(trechos_server_c, cpf)
 
     return jsonify({"resultado": "Rollback realizado com sucesso no servidor C"})
 
