@@ -107,24 +107,24 @@ O diagrama de sequência abaixo, ilustra outros casos, como a compra ideal e tre
 Se um cliente está fazendo uma compra no Servidor A e esse caí, é possível prosseguir com a compra a partir daquele momento. Isso se da pelo uso do paradigma Stateless provido pelo próprio HTTP.
 Se um cliente está fazendo uma compra no Servidor A e esse compra trechos em outros servidores, e um desses não responde ou não tem mais trechos, a compra em A sofre Rollback.
 
-A Priori, com a queda de servidores a consistência da concorrência distribuída se mantém, somente se o servidor que o cliente se conectou permanece conectado, pois é ele que é o responsável por emitir as ordens de rollback. Se por exemplo, o servidor A, que foi o conectado cair, antes de emitir as ordem de rollback, ocasionaria em prejuizos.
-Assim como no VendePass, foi adicionado timeout para requisicoes e conexões que por muito tempo não são respondidas. 
+A Priori, com a queda de servidores a consistência da concorrência distribuída se mantém, somente se o servidor que o cliente se conectou permanece conectado, pois é ele que é o responsável por emitir as ordens de rollback. Se por exemplo, o servidor A, que foi o conectado cair, antes de emitir as ordem de rollback, ocasionaria em prejuízos.
+Assim como no VendePass, foi adicionado timeout para requisições e conexões que por muito tempo não são respondidas. 
 
 
 **Avaliação da solução**: 
 Foi criado um script para testes. 
-* O primeiro cenário foi envolvendo somente um servidor, A, de modo que 5 clientes tentam competir por 3 vagas, ocorreu tudo bem de modo que 2 clientes ficaram sem vagas, mas não foi computado nenhuma vaga que não existia.
-* Já o segundo cenário envolvia agora três servidores A, B e C. O script se conectava ao Servidor B, e abria diversos 5 terminais. O que ocorre é que para o Servidor A tinha 4 vagas para o trecho, e o B e C tinha 5 vagas para os respectivos trechos. A compra foi efetuada corretamente, e somente 4 passagens foram compradas, de modo que foi feito o rollback de uma delas.
-* O Último script para testes envolveu uma magnitude muito grande de solicitações (100), no inicio das 100 solicitações ocorreu uma demora, mas conforme chegou na faixa dos 60-70 solicitações o fluxo aumentou rapidamente.
+* O primeiro cenário foi envolvendo somente um servidor A, de modo que 5 clientes tentam competir por 3 vagas, ocorreu tudo bem de modo que 2 clientes ficaram sem vagas, mas não foi computado nenhuma vaga que não existia.
+* Já o segundo cenário envolvia agora três servidores A, B e C. O script se conectava ao Servidor B, e abria 5 terminais. O que ocorre é que para o Servidor A tinha 4 vagas para o trecho, e o B e C tinha 5 vagas para os respectivos trechos. A compra foi efetuada corretamente, e somente 4 passagens foram compradas, de modo que foi feito o rollback de uma delas.
+* O Último script para testes envolveu uma magnitude muito grande de solicitações (100), onde no inicio das 100 solicitações ocorreu uma demora, mas conforme chegou na faixa dos 60-70 solicitações o fluxo aumentou rapidamente.
 * O último, o script abria 20 terminais, sendo que os pares o cliente era conectado ao A e os impares o cliente era conectado ao B. O mesmo recursos eram solicitados, pelos testes o programa se comportou bem, apesar do número baixo de vagas (eram somente 10 para 20 clientes), assim como no primeiro caso, não houve incoerência relacionado ao número de vagas, seja por sobrecompra ou subcompra. Mais testes nesse cenário são necessários, para saber o quão balanceados estão sendo as compras feita em cada servidores e se será necessário algum sistema de Load balancing.
 
 **Documentação do código**:
-O código está quase completamente comentado e documentado.
+O código está completamente comentado e documentado.
 
 **Emprego do Docker**:
 Implementado. Foi criado Dockers para os servidor A, B e C e um para o cliente. Foi criado também um docker-compose, para orquestras o relacionamento das 4 entidades e o estabelecimento de uma rede entra elas no ambiente de testagem Docker.
 
 **Conclusão**
-Por fim, está sendo possível criar um sistema servidor-cliente e servidor-servidor robusto e resistente a falhas (com exceção da falha do nó principal), com forma maleável e eficaz. O fato de não haver registro de estados por parte do servidor, bem como as conexão só ocorrerem no momento de envio da mensagem, faz desse sistema bastante seguro. O servidor aceita múltiplas linhas de execução (Threads) e possuí segurança no que diz respeito a acesso e segurança dos dados, evitando problemas como compras de uma passagem não mais disponível. De melhoras para o sistema, um sistema de cache para maior velocidade de processamento seria uma adição bem-vinda para o sistema, de forma adicionar ainda mais eficácia do servidor no processamento de requisições, além de um sistemas de "Lock" por trechos ou caminhos em vez de arquivos. Por fim, um sistema de "Load balancing" seria interessante no tocante a distribuição de clientes por servidores. O emprego do Docker está em andamento.
+Por fim, está sendo possível criar um sistema servidor-cliente e servidor-servidor robusto e resistente a falhas (com exceção da falha do nó principal), com forma maleável e eficaz. O fato de não haver registro de estados por parte do servidor, bem como as conexão só ocorrerem no momento de envio da mensagem, faz desse sistema bastante seguro. O servidor aceita múltiplas linhas de execução (Threads) e possui segurança no que diz respeito a acesso e segurança dos dados, evitando problemas como compras de uma passagem não mais disponível. De melhoras para o sistema, um sistema de cache para maior velocidade de processamento seria uma adição bem-vinda para o sistema, de forma adicionar ainda mais eficácia do servidor no processamento de requisições, além de um sistemas de "Lock" por trechos ou caminhos em vez de arquivos. Ademais, a adição de uma lógica que permitisse a não dependência do servidor coordenador em uma compra, permitiria maior confiabilidade. Por fim, um sistema de "Load balancing" seria interessante no tocante a distribuição de clientes por servidores. No mais foi possível criar contêiner para o servidor e cliente, proporcionando um ambiente de testagem seguro.
 
 
