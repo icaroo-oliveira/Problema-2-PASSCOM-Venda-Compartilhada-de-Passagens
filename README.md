@@ -86,7 +86,7 @@ Seguindo essa lógica, um caminho pode ser encontrado misturando trechos dos tr�
 Para lidar com a concorrência foi feito uso de um algorítmo que usava de Locks (responsáveis por travarem regiões críticas) e Threads para processarem compras de outros servidores. O Lock de um servidor é comum a todas requisições e endpoints. De modo que, uma operação de compra iniciada por um cliente e uma por outro servidor, compartilham do mesmo lock. Esse algoritmo preza sempre pelo cenário ideal, recebe o nome de "One Phase Commit", pois se existe uma necessidade de trecho de um servidor, ele já inicia a compra, mesmo que aquele server, nesse meio tempo possa ter perdido aquela vaga de alguma forma. Se esse cenário ocorrer, como já foi dito, é disparada uma ordem de "rollback".
 
 <p align="center">
-  <img src="/imagens/diagrama_sequencia.png" width = "600" />
+  <img src="/imagens/diagrama_sequencia_caso.png" width = "600" />
 </p>
 <p align="center"><strong> Figura 1. Fluxo de mensagens para uma compra bem sucedida envolvendo A e B </strong></p>
 </strong></p>
