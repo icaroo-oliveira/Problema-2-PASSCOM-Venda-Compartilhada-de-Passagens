@@ -180,7 +180,7 @@ def salvar_passagem_comprada(dicionario_att):
         json.dump(dicionario_att, arq, indent=4)
 
 # Função que salva um dicionário no arquivo (atualiza)
-# Parâmetros ->     dicionario_att: dicionario das passagens com informações atualizadas para ser salvo em arquivo
+# Parâmetros ->     dicionario_att: dicionario com rollbacks pendentes de outros servidores
 # Retorno ->        Sem retorno
 def salvar_rollbacks_failures(dicionario_att):
     with open(ARQUIVO_ROLLBACKS_FALHOS, 'w') as arq:
