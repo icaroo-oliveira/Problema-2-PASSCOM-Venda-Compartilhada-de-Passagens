@@ -110,7 +110,7 @@ def start_client():
                             }
 
                             # Solicita que server atual afetue compra do caminho escolhido
-                            resposta, status = requests_post(servidor_conectado_url, "/comprar_cliente", mensagem, "resultado", servidor_conectado_nome, 25)
+                            resposta, status = requests_post(servidor_conectado_url, "/comprar_cliente", mensagem, "resultado", servidor_conectado_nome, 40)
                             if resposta is None and status is None:
                                 continue
                             
