@@ -106,10 +106,7 @@ O diagrama de sequência abaixo, ilustra outros casos, como a compra ideal e tre
 
 Se um cliente está fazendo uma compra no Servidor A e esse caí, é possível prosseguir com a compra a partir daquele momento. Isso se da pelo uso do paradigma Stateless provido pelo próprio HTTP.
 Se um cliente está fazendo uma compra no Servidor A e esse compra trechos em outros servidores, e um desses não responde ou não tem mais trechos, a compra em A sofre Rollback.
-
-A Priori, com a queda de servidores a consistência da concorrência distribuída se mantém, somente se o servidor que o cliente se conectou permanece conectado, pois é ele que é o responsável por emitir as ordens de rollback. Se por exemplo, o servidor A, que foi o conectado cair, antes de emitir as ordem de rollback, ocasionaria em prejuízos.
-Assim como no VendePass, foi adicionado timeout para requisições e conexões que por muito tempo não são respondidas. 
-
+A Priori, com a queda de servidores a consistência da concorrência distribuída se mantém, e mesmo que o servidor que o cliente se conectou tenha algum erro de conexão, existirá persistência dos rollbacks que devem ser realizados.
 
 **Avaliação da solução**: 
 Foi criado um script para testes. 
