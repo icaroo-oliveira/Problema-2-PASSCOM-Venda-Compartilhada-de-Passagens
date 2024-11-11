@@ -188,10 +188,9 @@ def handle_comprar_cliente():
 
             # Se servidor C ainda tem os trechos, registra a compra
             if comprar:
-                # PS: aqui vai ter que retirar a compra depois, caso server A ou B de merda
                 registra_trechos_escolhidos(G, trechos_server_c, cpf)
             
-            # Se servidor C não tem mais o trecho, retorna ao cliente que deu merda
+            # Se servidor C não tem mais o trecho, informa ao cliente que não efetuou a compra
             else:
                 return jsonify({"resultado": "Caminho indisponível"}), 300
 
@@ -399,6 +398,6 @@ if __name__ == "__main__":
         # threaded -> multiplas requisições processadas ao "mesmo tempo"
         app.run(host=HOST, port=PORTA, threaded=True)
 
-    # Se app.run der merda, exibe a merda e encerra programa
+    # Se app.run der erro, exibe o erro e encerra programa
     except (OSError, Exception) as e:
         print(f"Erro: {e}")

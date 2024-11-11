@@ -93,6 +93,7 @@ def requests_delete(server_url, requisicao, mensagem, chave_dicionario, nome_ser
 # Retorno ->        Sem retorno
 def solicitar_caminhos_ou_passagens(server_url, mensagem, chave_dicionario, nome_servidor, resultados, requisicao, timeout):
     caminhos = requests_get(server_url, requisicao, mensagem, chave_dicionario, nome_servidor, timeout)
+    
     if caminhos is not None:
         resultados[nome_servidor] = caminhos
     else:

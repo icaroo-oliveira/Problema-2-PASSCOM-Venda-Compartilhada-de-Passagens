@@ -114,7 +114,7 @@ def start_client():
                             if resposta is None and status is None:
                                 continue
                             
-                            # Se não der merda, sai do loop
+                            # Se não der problema, sai do loop
                             break
                         
                         # se escolheu sair ou ir pro menu principal, sai do while e volta ao menu principal ou encerra programa
@@ -171,7 +171,7 @@ def start_client():
                     if passagens is None:
                         continue
                     
-                    # Se não der merda, sai do loop
+                    # Se não der problema, sai do loop
                     break
                 
                 # Volta pro menu principal
@@ -209,6 +209,6 @@ def start_client():
     imprime_divisoria()
     print("Até a próxima!")
     imprime_divisoria()
-
+    
 if __name__ == "__main__":
     start_client()
