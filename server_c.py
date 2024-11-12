@@ -300,6 +300,8 @@ def handle_comprar_cliente():
 
     # Servidor A teve sucesso e servidor B não
     if (status_b == 300 or status_b is None) and status_a == 200:
+        print(resposta_a)
+        
         if status_b == 300:
             print(resposta_b)
             
@@ -311,6 +313,8 @@ def handle_comprar_cliente():
 
     # Servidor B teve sucesso e servidor A não
     elif (status_a == 300 or status_a is None) and status_b == 200:
+        print(resposta_b)
+        
         if status_a == 300:
             print(resposta_a)
         
